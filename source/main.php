@@ -1,6 +1,6 @@
 <?php
 
-	require_once(__DIR__.'/settings.php');
+	require_once(__DIR__.'/config.php');
 	// Nahoni require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/session.php');			// Session class.
 	require(__DIR__.'/navigation.php');
 	require(__DIR__.'/source/dc/record_navigation/main.php');	// Record navigation.
