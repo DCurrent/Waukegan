@@ -4,3 +4,6 @@
 [submodule "source/dc/yukon"]
 	path = source/dc/yukon
 	url = https://github.com/DCurrent/Yukon
+[submodule "source/dc/stoeckl"]
+	path = source/dc/stoeckl
+	url = https://github.com/DCurrent/Stoeckl
