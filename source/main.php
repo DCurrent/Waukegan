@@ -9,7 +9,7 @@
 	require(__DIR__.'/data_main.php');
 	// Yukon require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/database/main.php'); 	// Database class.
 	// Stoeckl require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/access/main.php');
-	require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/url_query/main.php'); 	// URL builder (to include variables).
+	// require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/url_query/main.php'); 	// URL builder (to include variables).
 
 		
 	// Replace default session handler.
