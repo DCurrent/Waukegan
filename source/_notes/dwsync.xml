@@ -15,4 +15,12 @@
 <file name="main.php" server="arftp.ad.uky.edu//ehs/apps/flashpoint/" local="131620721108497736" remote="131620541400000000" Dst="1" />
 <file name="navigation.php" server="arftp.ad.uky.edu//ehs/apps/flashpoint/" local="131620698102024301" remote="131620536600000000" Dst="1" />
 <file name="config.php" server="arftp.ad.uky.edu//ehs/apps/flashpoint/" local="131620698102180575" remote="131620540800000000" Dst="1" />
+<file name="banner.php" server="arftp.ad.uky.edu//ehs/apps/waukegan/" local="131620698101711629" remote="131620548600000000" Dst="1" />
+<file name="config.php" server="arftp.ad.uky.edu//ehs/apps/waukegan/" local="131620698102180575" remote="131620548600000000" Dst="1" />
+<file name="data_common.php" server="arftp.ad.uky.edu//ehs/apps/waukegan/" local="131620698101867726" remote="131620548600000000" Dst="1" />
+<file name="data_department.php" server="arftp.ad.uky.edu//ehs/apps/waukegan/" local="131620698101867726" remote="131620548600000000" Dst="1" />
+<file name="data_main.php" server="arftp.ad.uky.edu//ehs/apps/waukegan/" local="131620698102024301" remote="131620548600000000" Dst="1" />
+<file name="data_ticket.php" server="arftp.ad.uky.edu//ehs/apps/waukegan/" local="131620698102024301" remote="131620548600000000" Dst="1" />
+<file name="navigation.php" server="arftp.ad.uky.edu//ehs/apps/waukegan/" local="131620698102024301" remote="131620548600000000" Dst="1" />
+<file name="main.php" server="arftp.ad.uky.edu//ehs/apps/waukegan/" local="131620729336145595" remote="131620549800000000" Dst="1" />
 </dwsync>

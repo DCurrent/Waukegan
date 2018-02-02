@@ -3,13 +3,13 @@
 	require_once(__DIR__.'/config.php');
 	// Nahoni require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/session.php');			// Session class.
 	require(__DIR__.'/navigation.php');
-	require(__DIR__.'/source/dc/record_navigation/main.php');	// Record navigation.
-	require(__DIR__.'/source/dc/sorting/main.php'); 		// Record sorting.
-	require(__DIR__.'/source/dc/cache/main.php'); 		// Page cache.
+	require(__DIR__.'/dc/record_navigation/main.php');	// Record navigation.
+	require(__DIR__.'/dc/sorting/main.php'); 		// Record sorting.
+	require(__DIR__.'/dc/cache/main.php'); 		// Page cache.
 	require(__DIR__.'/data_main.php');
 	// Yukon require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/database/main.php'); 	// Database class.
 	// Stoeckl require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/access/main.php');
-	require(__DIR__.'/source/dc/url_query/main.php'); 	// URL builder (to include variables).
+	require(__DIR__.'/dc/url_query/main.php'); 	// URL builder (to include variables).
 
 	
 	// Load class using namespace.
