@@ -1,0 +1,3 @@
+[submodule "source/dc/nahoni"]
+	path = source/dc/nahoni
+	url = https://github.com/DCurrent/Nahoni
