@@ -5,17 +5,16 @@
 	
 	//$page_obj = new class_page_cache();
 	
-	echo 'a';
 	$access_obj_process = new \dc\stoeckl\process();
 	$access_obj_process->get_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
 	$access_obj_process->get_config()->set_use_local(FALSE);
 	$access_obj_process->process_control();
-	echo 'b';
+	
 	//Get and verify log in status.
 	$access_obj = new \dc\stoeckl\status();
 	$access_obj->get_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);	
 	$access_obj->verify();
-	echo 'c';
+	
 	// Set up navigaiton.
 	$navigation_obj = new class_navigation();
 	$navigation_obj->generate_markup_nav();
