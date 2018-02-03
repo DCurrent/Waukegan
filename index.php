@@ -113,7 +113,7 @@
                             
                             <br>
                             
-                            <button type="submit" name="access_action" value="<?php echo ACCESS_ACTION::LOGIN; ?>" class="btn btn-default"><span class="glyphicon glyphicon-log-in"></span> Login</button>
+                            <button type="submit" name="access_action" value="<?php echo \dc\stoeckl\ACTION::LOGIN; ?>" class="btn btn-default"><span class="glyphicon glyphicon-log-in"></span> Login</button>
                         </form>
             
                 <?php
