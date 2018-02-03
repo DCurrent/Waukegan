@@ -16,7 +16,7 @@
 		public function __construct()
 		{
 			$this->directory_prime 	= self::DIRECTORY_PRIME;
-			$this->access_obj		= new class_access_status();
+			$this->access_obj		= new \dc\stoeckl\status();
 			
 			$this->access_obj->get_settings()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
 			

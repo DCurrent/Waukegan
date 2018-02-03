@@ -29,7 +29,7 @@
 	$url_query->set_data('id', $obj_navigation_rec->get_id());
 	
 	// User access.
-	$access_obj = new class_access_status();
+	$access_obj = new \dc\stoeckl\status();
 	$access_obj->get_settings()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
 	$access_obj->set_redirect($url_query->return_url());
 		
@@ -506,7 +506,7 @@
 				<?php echo $obj_navigation_rec->get_markup(); ?>         
           
           		<?php
-					$lookup = new class_access_lookup;
+					$lookup = new \dc\stoeckl\lookup;
 				
 					if($_main_data->get_account())
 					{

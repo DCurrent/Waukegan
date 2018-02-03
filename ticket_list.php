@@ -112,7 +112,7 @@
 	$url_query	= new url_query;
 		
 	// User access.
-	$access_obj = new class_access_status();
+	$access_obj = new \dc\stoeckl\status();
 	$access_obj->get_settings()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
 	$access_obj->set_redirect($url_query->return_url());
 	
