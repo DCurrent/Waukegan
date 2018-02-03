@@ -56,8 +56,6 @@
 			// Start output caching.
 			ob_start();
 		?>
-        	
-        1
             <nav class="navbar">
                 <div class="container-fluid">
                     <div class="navbar-header">
