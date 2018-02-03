@@ -12,7 +12,12 @@
 	
 	abstract class DATABASE
 	{
-		const NAME	= 'ehs_ticket';
+		const 
+			HOST 		= 'gensql.ad.uky.edu\general',	// Database host (server name or address)
+			NAME 		= 'ehs_ticket',					// Database logical name.
+			USER 		= 'EHSInfo_User',				// User name to access database.
+			PASSWORD	= 'ehsinfo',					// Password to access database.
+			CHARSET		= 'UTF-8';						// Character set.
 	}
 
 	abstract class MAILING
