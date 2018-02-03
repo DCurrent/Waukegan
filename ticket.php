@@ -506,22 +506,24 @@
 				<?php echo $obj_navigation_rec->get_markup(); ?>         
           
           		<?php
-					$lookup = new \dc\stoeckl\lookup;
+					//$lookup = new \dc\stoeckl\lookup;
 				
 					if($_main_data->get_account())
 					{
-						$lookup->lookup($_main_data->get_account());
+						//$lookup->lookup($_main_data->get_account());
+						$temp_account = $_main_data->get_account();
 					}
 					else
 					{
-						$lookup->lookup($access_obj->get_account());
+						//$lookup->lookup($access_obj->get_account());
+						$temp_account = $access_obj->get_account();
 					}
 				?>         		
           
           		<div class="form-group">
                 	<label class="control-label col-sm-2">Created by:</label>
                 	<div class="col-sm-10">
-                		<p class="form-control-static"><?php echo $lookup->get_account_data()->name_proper(); ?></p>
+                		<p class="form-control-static"><?php echo $temp_account;// $lookup->get_account_data()->name_proper(); ?></p>
                 	</div>
                 </div>
           
