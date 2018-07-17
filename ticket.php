@@ -488,7 +488,7 @@
         <script src="source/bootstrap/script.js"></script>
         
         <!-- Place inside the <head> of your HTML -->
-		<script type="text/javascript" src="http://ehs.uky.edu/libraries/vendor/tinymce/tinymce.min.js"></script>
+		<script type="text/javascript" src="source/tinymce/tinymce.min.js"></script>
         
     </head>
     
