@@ -477,7 +477,7 @@
         <title><?php echo APPLICATION_SETTINGS::NAME; ?>, Ticket Details<?php echo $ticket_header; ?></title>        
         
          <!-- Latest compiled and minified CSS -->
-        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+        <link rel="stylesheet" href="source/bootstrap/style.css">
         <link rel="stylesheet" href="source/css/style.css" />
         <link rel="stylesheet" href="source/css/print.css" media="print" />
         
@@ -485,7 +485,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         
         <!-- Latest compiled JavaScript -->
-        <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+        <script src="source/bootstrap/script.js"></script>
         
         <!-- Place inside the <head> of your HTML -->
 		<script type="text/javascript" src="http://ehs.uky.edu/libraries/vendor/tinymce/tinymce.min.js"></script>
@@ -671,7 +671,7 @@
 												}
 												
 												// Lookup account info.
-												$lookup->lookup($_obj_data_sub_party->get_account());
+												//$lookup->lookup($_obj_data_sub_party->get_account());
 											}
 											
 											
@@ -686,7 +686,7 @@
 												</td>
 															
                                                 <td>
-                                                	<?php echo $lookup->get_account_data()->name_proper(); ?>													 
+                                                	<?php echo $_obj_data_sub_party->get_account(); //$lookup->get_account_data()->name_proper(); ?>													 
 												</td>
                                                 								  
 												<td>													
@@ -753,7 +753,7 @@
 											if(!$_obj_data_sub->get_id()) $_obj_data_sub->set_id(DB_DEFAULTS::NEW_ID);
 											
 											// Lookup account info.
-											$lookup->lookup($_obj_data_sub->get_log_update_by());
+											//$lookup->lookup($_obj_data_sub->get_log_update_by());
 										?>
 											<tr>
                                             	<td> 
@@ -768,7 +768,7 @@
 												</td>  
 												
                                                 <td>                                             	
-                                                    <?php echo $lookup->get_account_data()->name_proper(); ?>
+                                                    <?php echo $_obj_data_sub->get_log_update_by(); //$lookup->get_account_data()->name_proper(); ?>
 												</td>
                                                 
 												<td><a id="<?php echo $_obj_data_sub->get_id(); ?>" href="#<?php echo $_obj_data_sub->get_id(); ?>"><?php if($_obj_data_sub->get_log_update()) echo date(APPLICATION_SETTINGS::TIME_FORMAT, $_obj_data_sub->get_log_update()->getTimestamp()); ?></a>			
@@ -865,7 +865,7 @@
 		
 		// Lookup account info.
 		<?php 
-			$lookup->lookup($access_obj->get_account());
+			//$lookup->lookup($access_obj->get_account());
 		?>
 		
 		function editDetails()
