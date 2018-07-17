@@ -11,6 +11,14 @@
 	// Stoeckl require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/access/main.php');
 	//require_once(__DIR__.'/dc/url_query/main.php'); 	// URL builder (to include variables).
 
+	// Ensure we're using https.
+	if(empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off")
+	{
+    	$redirect = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    	header('HTTP/1.1 301 Moved Permanently');
+    	header('Location: ' . $redirect);
+    	exit();
+	}
 	
 	// Load class using namespace.
 	function app_load_class($class_name) 
