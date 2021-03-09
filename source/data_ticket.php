@@ -34,7 +34,7 @@
 			return $this->status;
 		}
 		
-		public function get_account()
+		public function get_member_account()
 		{
 			return $this->account;
 		}
@@ -210,7 +210,7 @@
 			return $this->description;
 		}
 		
-		public function get_account()
+		public function get_member_account()
 		{
 			return $this->account;
 		}

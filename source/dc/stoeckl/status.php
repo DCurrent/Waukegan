@@ -5,14 +5,14 @@
 	interface istatus
 	{
 		// Accessors			
-		function get_account();
+		function get_member_account();
 		function get_list();
 		function get_authorized();	
 		function get_id();
 		function get_ip();	
-		function get_name_f();	
-		function get_name_l();
-		function get_name_m();	
+		function get_member_name_f();	
+		function get_member_name_l();
+		function get_member_name_m();	
 		function get_redirect();
 		function get_member_config();
 				
@@ -48,9 +48,9 @@
 			}
 		}
 		
-		public function get_account()
+		public function get_member_account()
 		{
-			return $this->data_account->get_account();
+			return $this->data_account->get_member_account();
 		}
 		
 		public function get_id()
@@ -73,19 +73,19 @@
 			return $this->authorized;
 		}
 		
-		public function get_name_f()
+		public function get_member_name_f()
 		{
-			return $this->data_account->get_name_f();
+			return $this->data_account->get_member_name_f();
 		}
 		
-		public function get_name_l()
+		public function get_member_name_l()
 		{
-			return $this->data_account->get_name_l();
+			return $this->data_account->get_member_name_l();
 		}
 		
-		public function get_name_m()
+		public function get_member_name_m()
 		{
-			return $this->data_account->get_name_m();
+			return $this->data_account->get_member_name_m();
 		}
 		
 		public function get_redirect()
@@ -200,7 +200,7 @@
 			$item	= NULL;								// Indivdiual item from list.	
 						
 			// Verify account is set at all. If so, then evaluate against provided list (if any).			
-			if($this->data_account->get_account() === NULL)											
+			if($this->data_account->get_member_account() === NULL)											
 			{	
 				$result	= AUTHORIZED_RESULT::NONE;
 			}
@@ -222,7 +222,7 @@
 						$item = $list->current();
 						
 						/* If current account matches an item in the list, we can allow access. */
-						if($item->get_account() === $this->data_account->get_account() || $item->get_account() === DEFAULTS::ADMINISTRATOR)			
+						if($item->get_member_account() === $this->data_account->get_member_account() || $item->get_member_account() === DEFAULTS::ADMINISTRATOR)			
 						{
 							/* Set result to allow access and break out of loop. */
 							$result = AUTHORIZED_RESULT::YES;

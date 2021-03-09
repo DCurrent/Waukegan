@@ -32,7 +32,7 @@
 	
 	// User access.
 	$access_obj = new \dc\stoeckl\status();
-	$access_obj->get_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
+	$access_obj->get_member_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
 	$access_obj->set_redirect($url_query->return_url());
 		
 	$access_obj->verify();
@@ -54,7 +54,7 @@
 		default:		
 		case RECORD_NAV_COMMANDS::NEW_BLANK:
 		
-			$_main_data->set_account($access_obj->get_account());
+			$_main_data->set_account($access_obj->get_member_account());
 			$_main_data->set_status(1);
 			break;
 			
@@ -191,11 +191,11 @@
 						array($_main_data->get_details(), SQLSRV_PARAM_IN),
 						array($_main_data->get_status(), SQLSRV_PARAM_IN),
 						array($_main_data->get_eta(), SQLSRV_PARAM_IN),
-						array($_main_data->get_account(), SQLSRV_PARAM_IN),
+						array($_main_data->get_member_account(), SQLSRV_PARAM_IN),
 						array(&$file_name, SQLSRV_PARAM_IN),
 						array(date(APPLICATION_SETTINGS::TIME_FORMAT), SQLSRV_PARAM_IN),
-						array($access_obj->get_account(), SQLSRV_PARAM_IN),
-						array($access_obj->get_ip(), SQLSRV_PARAM_IN));
+						array($access_obj->get_member_account(), SQLSRV_PARAM_IN),
+						array($access_obj->get_member_ip(), SQLSRV_PARAM_IN));
 			
 			$query->set_params($params);			
 			$query->query();
@@ -223,8 +223,8 @@
 				$params = array(array($_main_data->get_id(), 			SQLSRV_PARAM_IN),
 								array($_obj_data_sub_request->xml(), 	SQLSRV_PARAM_IN),
 								array(date(APPLICATION_SETTINGS::TIME_FORMAT), 					SQLSRV_PARAM_IN),
-								array($access_obj->get_account(),		SQLSRV_PARAM_IN),
-								array($access_obj->get_ip(), 			SQLSRV_PARAM_IN));
+								array($access_obj->get_member_account(),		SQLSRV_PARAM_IN),
+								array($access_obj->get_member_ip(), 			SQLSRV_PARAM_IN));
 				
 				$query->set_params($params);			
 							
@@ -250,8 +250,8 @@
 				$params = array(array($_main_data->get_id(), 			SQLSRV_PARAM_IN),
 								array($_obj_data_sub_request->xml(), 	SQLSRV_PARAM_IN),
 								array(date(APPLICATION_SETTINGS::TIME_FORMAT), 					SQLSRV_PARAM_IN),
-								array($access_obj->get_account(),		SQLSRV_PARAM_IN),
-								array($access_obj->get_ip(), 			SQLSRV_PARAM_IN));
+								array($access_obj->get_member_account(),		SQLSRV_PARAM_IN),
+								array($access_obj->get_member_ip(), 			SQLSRV_PARAM_IN));
 				
 				$query->set_params($params);			
 				$query->query();
@@ -261,7 +261,7 @@
 			// Set up and send email alert.
 			$address  = NULL;
 			
-			$sub_data_party_account_arr = $_obj_data_sub_request->get_account();
+			$sub_data_party_account_arr = $_obj_data_sub_request->get_member_account();
 			
 			if(is_array($sub_data_party_account_arr))
 			{
@@ -322,7 +322,7 @@
 	$nav_last 		= NULL;
 					
 	$params = array(array($obj_navigation_rec->get_id(), 	SQLSRV_PARAM_IN), 
-					array($access_obj->get_account(), 		SQLSRV_PARAM_IN),
+					array($access_obj->get_member_account(), 		SQLSRV_PARAM_IN),
 					array(NULL, 		SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
 					array(NULL, 		SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
 					array($nav_first,	SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
@@ -363,9 +363,9 @@
 	$default_party_arr = explode(', ', APPLICATION_SETTINGS::ADMINS);	
 	
 	// Add current account if it isn't an admin.
-	if(array_search($access_obj->get_account(), $default_party_arr) === FALSE) 
+	if(array_search($access_obj->get_member_account(), $default_party_arr) === FALSE) 
 	{
-		$default_party_arr[] = $access_obj->get_account();
+		$default_party_arr[] = $access_obj->get_member_account();
 	}
 	
 	// Ensure the party list is valid, else create a blank.
@@ -386,7 +386,7 @@
 		{
 			$_obj_data_sub_party = $_obj_data_sub_party_arr->current();
 			
-			if($_obj_data_sub_party->get_account() == $default_party)
+			if($_obj_data_sub_party->get_member_account() == $default_party)
 			{
 				$party_add = FALSE;
 				break;				
@@ -503,29 +503,29 @@
             </div>
             
             <form class="form-horizontal" role="form" method="post" enctype="multipart/form-data">           
-           		<input type="hidden" name="account" id="account" value="<?php echo $_main_data->get_account(); ?>" />
+           		<input type="hidden" name="account" id="account" value="<?php echo $_main_data->get_member_account(); ?>" />
                 
 				<?php echo $obj_navigation_rec->get_markup(); ?>         
           
           		<?php
 					//$lookup = new \dc\stoeckl\lookup;
 				
-					if($_main_data->get_account())
+					if($_main_data->get_member_account())
 					{
-						//$lookup->lookup($_main_data->get_account());
-						$temp_account = $_main_data->get_account();
+						//$lookup->lookup($_main_data->get_member_account());
+						$temp_account = $_main_data->get_member_account();
 					}
 					else
 					{
-						//$lookup->lookup($access_obj->get_account());
-						$temp_account = $access_obj->get_account();
+						//$lookup->lookup($access_obj->get_member_account());
+						$temp_account = $access_obj->get_member_account();
 					}
 				?>         		
           
           		<div class="form-group">
                 	<label class="control-label col-sm-2">Created by:</label>
                 	<div class="col-sm-10">
-                		<p class="form-control-static"><?php echo $temp_account;// $lookup->get_account_data()->name_proper(); ?></p>
+                		<p class="form-control-static"><?php echo $temp_account;// $lookup->get_member_account_data()->name_proper(); ?></p>
                 	</div>
                 </div>
           
@@ -552,7 +552,7 @@
                             class	="form-control"  
                             name	="eta" 
                             id		="eta" 
-                            placeholder="Estimated time of completion." <?php if($access_obj->get_account() != APPLICATION_SETTINGS::ADMIN_MAIN) echo ' readonly '; ?>
+                            placeholder="Estimated time of completion." <?php if($access_obj->get_member_account() != APPLICATION_SETTINGS::ADMIN_MAIN) echo ' readonly '; ?>
                             value="<?php if(is_object($_main_data->get_eta())) echo date(APPLICATION_SETTINGS::TIME_FORMAT, $_main_data->get_eta()->getTimestamp()); ?>">
                 	</div>
                 </div>
@@ -577,7 +577,7 @@
                                 			type="radio" 
                                             name="status" 
                                             value="<?php echo $_obj_data_list_status->get_id(); ?>"                                            
-                                            <?php //if($access_obj->get_account() != APPLICATION_SETTINGS::ADMIN_MAIN) echo ' disabled '; ?> 
+                                            <?php //if($access_obj->get_member_account() != APPLICATION_SETTINGS::ADMIN_MAIN) echo ' disabled '; ?> 
 											<?php if($_main_data->get_status() == $_obj_data_list_status->get_id()) echo ' checked ';?>><?php echo $_obj_data_list_status->get_label(); ?></label>
                        	 	</div>
                        
@@ -665,15 +665,15 @@
 											$class_add = NULL;				
 											
 											// Make sure there is a non-blank account.
-											if($_obj_data_sub_party->get_account())
+											if($_obj_data_sub_party->get_member_account())
 											{											
-												if(array_search($_obj_data_sub_party->get_account(), $default_party_arr) !== FALSE) 
+												if(array_search($_obj_data_sub_party->get_member_account(), $default_party_arr) !== FALSE) 
 												{													
 													$class_add = 'disabled';
 												}
 												
 												// Lookup account info.
-												//$lookup->lookup($_obj_data_sub_party->get_account());
+												//$lookup->lookup($_obj_data_sub_party->get_member_account());
 											}
 											
 											
@@ -684,11 +684,11 @@
 														name	="sub_party_account[]" 
 														id		="sub_party_account_<?php echo $_obj_data_sub_party->get_id(); ?>" 
 														class	="form-control <?php echo $class_add; ?>" 
-														value 	= "<?php echo $_obj_data_sub_party->get_account(); ?>">
+														value 	= "<?php echo $_obj_data_sub_party->get_member_account(); ?>">
 												</td>
 															
                                                 <td>
-                                                	<?php echo $_obj_data_sub_party->get_account(); //$lookup->get_account_data()->name_proper(); ?>													 
+                                                	<?php echo $_obj_data_sub_party->get_member_account(); //$lookup->get_member_account_data()->name_proper(); ?>													 
 												</td>
                                                 								  
 												<td>													
@@ -770,7 +770,7 @@
 												</td>  
 												
                                                 <td>                                             	
-                                                    <?php echo $_obj_data_sub->get_log_update_by(); //$lookup->get_account_data()->name_proper(); ?>
+                                                    <?php echo $_obj_data_sub->get_log_update_by(); //$lookup->get_member_account_data()->name_proper(); ?>
 												</td>
                                                 
 												<td><a id="<?php echo $_obj_data_sub->get_id(); ?>" href="#<?php echo $_obj_data_sub->get_id(); ?>"><?php if($_obj_data_sub->get_log_update()) echo date(APPLICATION_SETTINGS::TIME_FORMAT, $_obj_data_sub->get_log_update()->getTimestamp()); ?></a>			
@@ -867,7 +867,7 @@
 		
 		// Lookup account info.
 		<?php 
-			//$lookup->lookup($access_obj->get_account());
+			//$lookup->lookup($access_obj->get_member_account());
 		?>
 		
 		function editDetails()

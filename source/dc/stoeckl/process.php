@@ -211,7 +211,7 @@
 					// Start caching page contents.
 					ob_start();
 					?>
-						<span class="text-success">Hello <?php echo $this->data_account->get_name_f(); ?>, your log in was successful.</span>	
+						<span class="text-success">Hello <?php echo $this->data_account->get_member_name_f(); ?>, your log in was successful.</span>	
 					<?php
 					
 					// Collect contents from cache and then clean it.
@@ -303,8 +303,8 @@
 			$req_credential	= NULL;					
 								
 			// Get values.
-			$req_account 			= $this->data_account->get_account();
-			$req_credential			= $this->data_account->get_credential();				
+			$req_account 			= $this->data_account->get_member_account();
+			$req_credential			= $this->data_account->get_member_credential();				
 				
 			// If any credentials are missing, 
 			// then exit. No point in doing 
@@ -392,7 +392,7 @@
 				// Keep trying prefixes until there is a bind or we run out.
 				foreach($prefix_list as $prefix)
 				{		
-					$account = $prefix.$this->data_account->get_account();
+					$account = $prefix.$this->data_account->get_member_account();
                     
                     /* 
                     * Attempt to bind with account (prefix included) and 
@@ -407,7 +407,7 @@
                     try
                     {
                         
-                        $bind = ldap_bind($ldap, $account, $this->data_account->get_credential());
+                        $bind = ldap_bind($ldap, $account, $this->data_account->get_member_credential());
                         
                         if($bind == TRUE) 
                         {
@@ -438,7 +438,7 @@
                     */
                     
 					/* concatenate search string. */
-					$filter = "samaccountname=".$this->data_account->get_account();					
+					$filter = "samaccountname=".$this->data_account->get_member_account();					
 										
 					/* Pull attributes for the domain. */
 					$attributes = array("displayname", "sn", "givenname", "pwdlastset", "cn");
@@ -519,8 +519,8 @@
 		public function login_local()
 		{					
 			// Get values.
-			$req_account 			= $this->data_account->get_account();
-			$req_credential			= $this->data_account->get_credential();						
+			$req_account 			= $this->data_account->get_member_account();
+			$req_credential			= $this->data_account->get_member_credential();						
 			
 			$query = $this->config->get_database();			
 		
@@ -542,7 +542,7 @@
 				
 				// Email is not in the data base as a field, but accounts
 				// ARE email, so just transpose it here.
-				$this->data_account->set_email($this->data_account->get_account());
+				$this->data_account->set_email($this->data_account->get_member_account());
 				
 				// Set result to indicate a local login.				 														
 				$this->login_result = LOGIN_RESULT::LOCAL;									
@@ -557,7 +557,7 @@
 		public function login_application()
 		{					
 			// Get values.
-			$account = $this->data_account->get_account();
+			$account = $this->data_account->get_member_account();
 			
 			$query = $this->config->get_database();			
 		

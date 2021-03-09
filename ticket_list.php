@@ -113,7 +113,7 @@
 		
 	// User access.
 	$access_obj = new \dc\stoeckl\status();
-	$access_obj->get_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
+	$access_obj->get_member_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
 	$access_obj->set_redirect($url_query->return_url());
 	
 	$access_obj->verify();	
@@ -169,7 +169,7 @@
 					array($paging->get_row_max(), 		SQLSRV_PARAM_IN), 
 					array($page_last, 					SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
 					array($row_count, 					SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
-					array($access_obj->get_account(), 	SQLSRV_PARAM_IN),
+					array($access_obj->get_member_account(), 	SQLSRV_PARAM_IN),
 					array($filter->get_create_f(),		SQLSRV_PARAM_IN),
 					array($filter->get_create_t(),		SQLSRV_PARAM_IN),
 					array($filter->get_update_f(),		SQLSRV_PARAM_IN),

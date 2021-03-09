@@ -6,13 +6,13 @@
 	{
 		// Accessors
 		function get_id();	
-		function get_account();		
-		function get_name_f();		
-		function get_name_m();		
-		function get_name_l();		
-		function get_credential();		
-		function get_account_id();		
-		function get_email();
+		function get_member_account();		
+		function get_member_name_f();		
+		function get_member_name_m();		
+		function get_member_name_l();		
+		function get_member_credential();		
+		function get_member_account_id();		
+		function get_member_email();
 		
 		// Mutators
 		function set_DataCommon(DataCommon $value);
@@ -102,7 +102,7 @@
 		
 		public function name_full()
 		{
-			return $this->get_name_f().' '.$this->get_name_l();
+			return $this->get_member_name_f().' '.$this->get_member_name_l();
 		}
 		
 		public function name_proper()
@@ -110,19 +110,19 @@
 			$result = NULL;
 			
 			// Last name found? Ad last name.
-			if($this->get_name_l()) $result .= $this->get_name_l();
+			if($this->get_member_name_l()) $result .= $this->get_member_name_l();
 			
 			// First name found?
-			if($this->get_name_f())
+			if($this->get_member_name_f())
 			{
 				// Last name found? If so we add the comma. Otherwise just first name.
-				if($this->get_name_l()) $result .= ', ';
+				if($this->get_member_name_l()) $result .= ', ';
 				
-				$result .= $this->get_name_f();							
+				$result .= $this->get_member_name_f();							
 			}
 			
 			// Middle name found? Add it as well.
-			//if($this->get_name_m()) $result .= ' '.$this->get_name_m();		
+			//if($this->get_member_name_m()) $result .= ' '.$this->get_member_name_m();		
 			
 			return $result;			
 		}
@@ -137,37 +137,37 @@
 			return $this->id;
 		}
 		
-		public function get_account()
+		public function get_member_account()
 		{
 			return $this->account;
 		}
 				
-		public function get_name_f()
+		public function get_member_name_f()
 		{
 			return $this->name_f;
 		}
 		
-		public function get_name_m()
+		public function get_member_name_m()
 		{
 			return $this->name_m;
 		}
 		
-		public function get_name_l()
+		public function get_member_name_l()
 		{
 			return $this->name_l;
 		}
 		
-		public function get_credential()
+		public function get_member_credential()
 		{
 			return $this->credential;
 		}
 		
-		public function get_account_id()
+		public function get_member_account_id()
 		{
 			return $this->account_id;
 		}
 		
-		public function get_email()
+		public function get_member_email()
 		{
 			return $this->email;
 		}

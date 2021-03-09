@@ -18,7 +18,7 @@
 			$this->directory_prime 	= self::DIRECTORY_PRIME;
 			$this->access_obj		= new \dc\stoeckl\status();
 			
-			$this->access_obj->get_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
+			$this->access_obj->get_member_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
 			
 		}
 		
@@ -51,7 +51,7 @@
 		{
 			$class_add = NULL;
 			
-			if(!$this->access_obj->get_account()) $class_add .= "disabled";
+			if(!$this->access_obj->get_member_account()) $class_add .= "disabled";
 			
 			// Start output caching.
 			ob_start();
@@ -84,16 +84,16 @@
                         </ul>
                         <ul class="nav navbar-nav navbar-right">
                         <?php
-							if($this->access_obj->get_account())
+							if($this->access_obj->get_member_account())
 							{
 						?>
-                   		  <li><a href="<?php echo $this->access_obj->get_config()->get_authenticate_url(); ?>?access_action=<?php echo \dc\stoeckl\ACTION::LOGOFF; ?>"><span class="glyphicon glyphicon-log-out"></span> <?php echo $this->access_obj->name_full(); ?></a></li>
+                   		  <li><a href="<?php echo $this->access_obj->get_member_config()->get_authenticate_url(); ?>?access_action=<?php echo \dc\stoeckl\ACTION::LOGOFF; ?>"><span class="glyphicon glyphicon-log-out"></span> <?php echo $this->access_obj->name_full(); ?></a></li>
                         <?php
 							}
 							else
 							{
 						?>
-                        		<li><a href="<?php echo $this->access_obj->get_config()->get_authenticate_url(); ?>"><span class="glyphicon glyphicon-log-in"></span> Guest</a></li>
+                        		<li><a href="<?php echo $this->access_obj->get_member_config()->get_authenticate_url(); ?>"><span class="glyphicon glyphicon-log-in"></span> Guest</a></li>
                         <?php
 							}
 						?>                   

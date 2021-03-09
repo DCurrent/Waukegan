@@ -6,13 +6,13 @@
 	//$page_obj = new class_page_cache();
 	
 	$access_obj_process = new \dc\stoeckl\process();
-	$access_obj_process->get_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
-	$access_obj_process->get_config()->set_use_local(FALSE);
+	$access_obj_process->get_member_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);
+	$access_obj_process->get_member_config()->set_use_local(FALSE);
 	$access_obj_process->process_control();
 	
 	//Get and verify log in status.
 	$access_obj = new \dc\stoeckl\status();
-	$access_obj->get_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);	
+	$access_obj->get_member_config()->set_authenticate_url(APPLICATION_SETTINGS::AUTHENTICATE_URL);	
 	$access_obj->verify();
 	
 	// Set up navigaiton.
@@ -68,9 +68,9 @@
                 <p>
 				<?php
 				
-					echo '<!--account:'.$access_obj->get_account().'-->';
+					echo '<!--account:'.$access_obj->get_member_account().'-->';
 					// Logged in?
-					if($access_obj->get_account())
+					if($access_obj->get_member_account())
 					{
 						/* This sets the $time variable to the current hour in the 24 hour clock format */
 						$time = date("H");
@@ -88,7 +88,7 @@
 						if ($time >= "17") {
 							echo "Good evening ";
 						}
-						echo $access_obj->get_name_f();
+						echo $access_obj->get_member_name_f();
 				?>! Thank you for using <?php echo APPLICATION_SETTINGS::NAME; ?>, a ticket tracking system for information systems services within UK Environmental Health And Safety. To get started, choose an item from the navigaton bar at top of the screen.</p>
                 <?php
 					}
