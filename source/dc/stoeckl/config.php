@@ -1,57 +1,159 @@
-<?php 
-	
+<?php
+
 	namespace dc\stoeckl;
 
-	abstract class DEFAULTS
-	{	
-		const ADMINISTRATOR		= 'dvcask2';					// Administrator.
-		const LDAP_HOST_BIND	= 'ldap://ad.uky.edu:3268';		// LDAP host for binding.
-		const LDAP_HOST_DIR		= 'advip.uky.edu';				// LDAP host for directory
-		const LDAP_BASE_DN		= 'dc=uky,dc=edu';				// LDAP Base Domain Name.
-		const AUTHENTICATE_URL	= '/z_authenticate_dev.php';	// Authenticate page URL.
-		const DOMAIN_PREFIX		= ', ad/, ad\, mc\, mc/';
-		const DIAGNOSTIC		= FALSE;						// Record user info to outside database for diagnostics.
-		const DIAGNOSTIC_MAIL	= TRUE;							// Record user info to email for diagnostics.
-		const USE_LOCAL			= FALSE;							// Attempt to log in user with local account.
-	}
-	
-	abstract class SES_KEY
+	require('configBin.php');
+
+	interface iconfig
 	{
-		const REDIRECT		= 'access_redirect';				// URL to send user on successfull login.
-		const DIALOG		= 'access_dialog';					// Session ID of authorization dialog.
+		// Accessors	
+		function get_database();
+		function get_administrator();
+		function get_ldap_host_bind();		
+		function get_ldap_host_dir();		
+		function get_ldap_base_dn();		
+		function get_dn_prefix();		
+		function get_authenticate_url();		
+		function get_diagnostic();		
+		function get_diagnostic_mail();		
+		function get_use_local();
 		
-		const ID			= 'account_id';						// Session ID of account id assigned by local account database.
-		const ACCOUNT		= 'access_cn';						// Session ID of account name currently in session.
-		const NAME_F		= 'access_name_f';					// Session ID of first name belonging to account currently in session.
-		const NAME_M		= 'access_name_m';		
-		const NAME_L		= 'access_name_l';
-		const EMAIL			= 'access_email';
-		const ACCOUNT_ID	= 'account_natural_id';				// ID number given to account (if any. Example: UK ID).
+		// Mutators
+		function set_database($value);
+		function set_administrator($value);
+		function set_ldap_host_bind($value);	
+		function set_ldap_host_dir($value);			
+		function set_ldap_base_dn($value);		
+		function set_authenticate_url($value);		
+		function set_diagnostic($value);		
+		function set_diagnostic_mail($value);		
+		function set_use_local($value);		
 	}
-	
-	abstract class ACTION
+
+	class config implements iconfig
 	{
-		const LOGIN			= 1;	// Account and password fields left empty by user.
-		const LOGOFF		= 2;	// Login success through local account.		
+		private
+			$administrator			= NULL,
+			$database				= NULL,
+			$ldap_host_bind			= NULL,
+			$ldap_host_dir			= NULL,
+			$ldap_base_dn			= NULL,
+			$dn_prefix				= NULL,
+			$authenticate_url		= NULL,
+			$diagnostic				= NULL,
+			$diagnostic_mail		= NULL,
+			$use_local				= NULL;
+		
+		public function __construct()
+		{		
+			$this->administrator 	= DEFAULTS::ADMINISTRATOR;
+			$this->ldap_host_bind	= DEFAULTS::LDAP_HOST_BIND;
+			$this->ldap_host_dir	= DEFAULTS::LDAP_HOST_DIR;
+			$this->ldap_base_dn		= DEFAULTS::LDAP_BASE_DN;
+			$this->dn_prefix		= DEFAULTS::DOMAIN_PREFIX;
+			$this->authenticate_url	= DEFAULTS::AUTHENTICATE_URL;
+			$this->diagnostic		= DEFAULTS::DIAGNOSTIC;
+			$this->diagnostic_mail	= DEFAULTS::DIAGNOSTIC_MAIL;
+			$this->use_local		= DEFAULTS::USE_LOCAL;		
+		}
+		
+		// Accessors	
+		public function get_administrator()
+		{
+			return $this->administrator;
+		}
+		
+		public function get_database()
+		{
+			return $this->database;
+		}
+		
+		public function get_ldap_host_bind()
+		{
+			return $this->ldap_host_bind;
+		}
+		
+		public function get_ldap_host_dir()
+		{
+			return $this->ldap_host_dir;
+		}
+		
+		public function get_ldap_base_dn()
+		{
+			return $this->ldap_base_dn;
+		}
+		
+		public function get_dn_prefix()
+		{
+			return $this->dn_prefix;
+		}
+		
+		public function get_authenticate_url()
+		{
+			return $this->authenticate_url;
+		}
+		
+		public function get_diagnostic()
+		{
+			return $this->diagnostic;
+		}
+		
+		public function get_diagnostic_mail()
+		{
+			return $this->diagnostic_mail;
+		}
+		
+		public function get_use_local()
+		{
+			return $this->use_local;
+		}
+		
+		// Mutators
+		public function set_administrator($value)
+		{
+			$this->administrator = $value;
+		}
+		
+		public function set_database($value)
+		{
+			$this->database = $value;
+		}
+		
+		public function set_ldap_host_bind($value)
+		{
+			$this->ldap_host_bind = $value;
+		}
+		
+		public function set_ldap_host_dir($value)
+		{
+			$this->ldap_host_dir = $value;
+		}
+			
+		public function set_ldap_base_dn($value)
+		{
+			$this->ldap_base_dn = $value;
+		}
+		
+		public function set_authenticate_url($value)
+		{
+			$this->authenticate_url = $value;
+		}
+		
+		public function set_diagnostic($value)
+		{
+			$this->diagnostic = $value;
+		}
+		
+		public function set_diagnostic_mail($value)
+		{
+			$this->diagnostic_mail = $value;
+		}
+		
+		public function set_use_local($value)
+		{
+			$this->use_local = $value;
+		}
 	}
-	
-	abstract class LOGIN_RESULT
-	{
-		const NO_INPUT		= 0;	// Account and password fields left empty by user.
-		const LOCAL			= 1;	// Login success through local account.
-		const LDAP			= 2;	// Login success through LDAP.
-		const NO_BIND		= 3;	// LDAP bind failure (probably bad password).
-		const NO_PRINCIPAL	= 4;	//
-		const NO_ACCOUNT	= 5;					
-		const NO_RESULT		= 6;	// No result at all from LDAP query.
-		const NO_LDAP		= 7;	// Could not connect to LDAP.
-		const LOGOFF		= 8;	// User requested log off.
-	}
-	
-	abstract class AUTHORIZED_RESULT
-	{
-		const NONE	= 0;
-		const NO	= 1;
-		const YES	= 2;
-	}
+
+
 ?>

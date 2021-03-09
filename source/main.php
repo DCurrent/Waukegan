@@ -21,84 +21,90 @@
 	$config_file_info = pathinfo(php_ini_loaded_file());
 	$config_file_full = $config_file_info['dirname'].'\dc_flashpoint.ini';
 
-	// Ensure we're using https.
-	if(empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off")
-	{
-    	$redirect = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-    	header('HTTP/1.1 301 Moved Permanently');
-    	header('Location: ' . $redirect);
-    	exit();
-	}
-	
-	// Load class using namespace.
-	function app_load_class($class_name) 
+	/* Load class using namespace. */
+	function app_load_class($class_name_arg) 
 	{
         $file_name = '';
         $namespace = '';
-
-		//echo '<!-- Class request: '.$class_name.' -->'.PHP_EOL;
-
-        // Sets the include path as the "src" directory
-        $include_path = __DIR__;
-
-		// Find the string position of the last namespace separator (\) in class name.
-		$lastNsPos = strripos($class_name, '\\');
-
-		// If we found the namespace separator, let's build a 
-		// file name string.
-        if ($lastNsPos)
-		{
-			// Namespace is the portion of of class name starting
-			// from 0 and ending at last namespace separator.
-            $namespace = substr($class_name, 0, $lastNsPos);
-			
-			// Crop namespace from class name to leave only class name itself.
-            $class_name = substr($class_name, $lastNsPos + 1);
-			
-			// Add directory separator to namespace to start a file path.
-            $file_name = str_replace('\\', DIRECTORY_SEPARATOR, $namespace).DIRECTORY_SEPARATOR;
-        }
+		$class_name = $class_name_arg;
+	
+		/**
+		* Use the root path as our base directory, then
+		* find the string position of last namespace 
+		* separator in class name.
+		**/
+		$include_path = dirname(__FILE__);
 		
-		// Add suffix to file name, then add include path to build
-		// full file name path.
-        $file_name .= $class_name.'.class.php';
+		$last_namespace_position = strripos($class_name, '\\');		
+		
+		/**
+		* If we found the namespace separator, let's build a 
+		* file name string.
+		**/
+        if ($last_namespace_position)
+		{
+			/*
+            * Namespace is the portion of of class name starting
+			* from 0 and ending at last namespace separator.
+            */
+            $namespace = substr($class_name, 0, $last_namespace_position);
+			
+			/* Crop namespace from class name to leave only class name itself. */
+            $class_name = substr($class_name, $last_namespace_position + 1);
+			
+			/* Add directory separator to namespace to start a file path. */
+            $file_name = str_replace('\\', DIRECTORY_SEPARATOR, $namespace).DIRECTORY_SEPARATOR;
+			
+		}
+		
+		/*
+		* Add suffix to file name, then add include path to build
+		* full file name path.
+		*/
+        $file_name .= $class_name.'.php';
+				
         $file_name_full = $include_path . DIRECTORY_SEPARATOR . $file_name;
-	   
-	   	// If complete file path exists, then load it.
+		
+		/*
+		* If complete file path exists, then load it. 
+		* Otherwise just die on the spot. It's a little
+		* redudant since require() would fail anyway, but
+		* I'd rather control what the error looks like.
+		*/
+        
         if (file_exists($file_name_full)) 
 		{
             require($file_name_full);
 			
-        	//echo ', loaded successfully. -->'.PHP_EOL;
+        	//echo '<!-- '.$class_name_arg.', loaded successfully. -->'.PHP_EOL;
 		} 
 		else 
 		{
-            //echo '<-- '.$file_name_full.' not found. -->'.PHP_EOL;
+			error_log('Autoloader Error: '.$file_name_full.' not found.');
+			die('Autoloader Error: '.$class_name_arg.' not found. Please contact administrator.');
         }
     }
 	
     spl_autoload_register('app_load_class');
 
-	// Prepare default database configuration.
-		// Establish connection configuration object.
-		$yukon_connect_config = new \dc\yukon\ConnectConfig();
-		
-		// Use application defaults as connection arguments.
-		$yukon_connect_config->set_host(DATABASE::HOST);
-		$yukon_connect_config->set_name(DATABASE::NAME);
-		$yukon_connect_config->set_user(DATABASE::USER);
-		$yukon_connect_config->set_password(DATABASE::PASSWORD);
+	/* 
+	* DC Yukon is the database controller. Most
+	* other libraries will accept it as an injected
+	* dependency.
+	*/
+	$dc_yukon_connect_config = new \dc\yukon\ConnectConfig($config_file_full);
+	$dc_yukon_connection = new \dc\yukon\Connect($dc_yukon_connect_config);
 
-		// Open connection with configuration arguments.
-		$yukon_connection 	= new \dc\yukon\Connect($yukon_connect_config);
-		$yukon_database		= new \dc\yukon\Database($yukon_connection);
+	/*
+	* DC Nahoni replaces PHP's native session 
+	* handling and sends the session data to
+	* an RDBMS table.
+	*/
+	$dc_nahoni_config = new \dc\nahoni\SessionConfig($config_file_full);		
+	$dc_nahoni_config->set_database($dc_yukon_connection->get_member_connection());
 
-	// Replace PHPs default session handler.
-		// Prepare session handler configuration.
-		$session_config = new \dc\nahoni\SessionConfig();
-		$session_config->set_database($yukon_database);
-
-		$session_handler = new \dc\nahoni\Session($session_config);
-		session_set_save_handler($session_handler, TRUE);
+	$dc_nahoni_session = new \dc\nahoni\Session($dc_nahoni_config);
+	session_set_save_handler($dc_nahoni_session, TRUE);
+	session_start();
 		
 ?>

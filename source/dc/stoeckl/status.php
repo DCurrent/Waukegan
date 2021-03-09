@@ -14,13 +14,13 @@
 		function get_name_l();
 		function get_name_m();	
 		function get_redirect();
-		function get_config();
+		function get_member_config();
 				
 		// Mutators	
 		function set_list($value);				
 		function set_authorized($value);
 		function set_redirect($value);	
-		function set_config(config $value);				
+		function set_member_config(config $value);				
 											
 		// Operations
 		function action();	
@@ -58,7 +58,7 @@
 			return $this->data_account->get_id();
 		}
 		
-		public function get_config()
+		public function get_member_config()
 		{
 			return $this->config;
 		}
@@ -99,7 +99,7 @@
 		}
 		
 		// Mutators	
-		public function set_config(config $value)
+		public function set_member_config(config $value)
 		{
 			$this->config = $value;
 		}
@@ -207,22 +207,24 @@
 			else
 			{	
 				
-				// Defreference access list.
+				/* Defreference access list. */
 				$list = $this->list;
 				
-				// Is list a double linked list object?
+				/* Is list a double linked list object? */
 				if(is_object($list) === TRUE)
 				{
-					// Loop over each item in double linked list and look for a match vs.
-					// current account.
-					for($list->rewind(); $list->valid(); $list->next())
+					/* 
+                    * Loop over each item in double linked list and look for a match vs.
+					* current account.
+					*/
+                    for($list->rewind(); $list->valid(); $list->next())
 					{						
 						$item = $list->current();
 						
-						// If current account matches an item in the list, we can allow access.
+						/* If current account matches an item in the list, we can allow access. */
 						if($item->get_account() === $this->data_account->get_account() || $item->get_account() === DEFAULTS::ADMINISTRATOR)			
 						{
-							// Set result to allow access and break out of loop.
+							/* Set result to allow access and break out of loop. */
 							$result = AUTHORIZED_RESULT::YES;
 							break;	
 						}
@@ -230,51 +232,62 @@
 				}
 				else
 				{
-					// No list of users provided, so we allow access to any legit user.
+					/* No list of users provided, so we allow access to any legit user. */
 					$result = AUTHORIZED_RESULT::YES;	
 				}				
 			}
 			
+            /*
+            * Return final result, and also use it
+            * to populate a result member.
+            */
+            
 			$this->authorized = $result;
-				
-			// Return result.
+			
 			return $result;
 		}	
 		
+        /*
+        * Caskey, Damon V.
+        * ~2012
+        *
+        * Execute a preset action based on last
+        * authorization result.
+        */
 		public function action()
-		{		
-			// Now we'll take action based on authorization result.
+		{  
+			/* Now we'll take action based on authorization result. */
 			switch ($this->authorized)
 			{
-				// Client is logged in with sufficiant access.
+				/* Client is logged in with sufficiant access. */
 				case AUTHORIZED_RESULT::YES:			
 					
 					break;
 				
-				// Client is logged in but lacks sufficiant access.
+				/* Client is logged in but lacks sufficiant access. */
 				case AUTHORIZED_RESULT::NO:				
 					
-					// Start caching page contents.
+					/* Start caching page contents. */
 					ob_start();
 					?>
 						<span class="text-warning">We're sorry <?php echo $this->name_f_m; ?>, but you are not permitted to access this resource. Please log in with an authorized account.</span>	
 					<?php
 					
-					// Collect contents from cache and then clean it.
+					/* Collect contents from cache and then clean it. */
 					$_SESSION[SES_KEY::DIALOG] = ob_get_contents();
 					ob_end_clean();			
 				
-					
-				
-				// No client is logged in.	
+				/* No client is logged in. */
 				default:
 				case AUTHORIZED_RESULT::NONE:
 					
 					$_SESSION[SES_KEY::REDIRECT] = $this->redirect;	
 					
-					// If headers are not sent, redirect to login page. Otherwise we'll just have
-					// to settle for an inline message.
-					if(headers_sent())
+                    /*
+					* If headers are not sent, redirect to login page. Otherwise we'll just have
+					* to settle for an inline message.
+					*/
+                    if(headers_sent())
 					{
 						echo $this->post_header();
 					}
@@ -283,10 +296,13 @@
 						header('Location: '.$this->config->get_authenticate_url());
 					}				
 					
-					// Exit the script here. This stops bots that ignore headers and prevents 
-					// users from proceeding even if headers had already been sent.
-					exit;
-					break;			
+					/* 
+                    * Exit the script here. This stops bots that ignore headers and prevents 
+					* users from proceeding even if headers had already been sent.
+					*/
+                    exit;
+					
+                    break;			
 			}
 		}
 		

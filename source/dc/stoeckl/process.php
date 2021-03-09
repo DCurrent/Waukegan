@@ -9,7 +9,7 @@
 		function get_feedback();
 		function get_login_result();
 		function get_redirect();
-		function get_config();
+		function get_member_config();
 		
 		// Mutators
 		function set_access_action($value);
@@ -43,6 +43,15 @@
 			
 		public function __construct(config $config = NULL, DataCommon $data_common = NULL, DataAccount $data_account = NULL)
 		{
+            /*
+            * Start up a session if there isn't
+            * one running already.
+            */
+            if(session_status() == PHP_SESSION_NONE)
+            {
+			     session_start();
+            }
+            
 			// Use argument or create new object if NULL.
 			if(is_object($config) === TRUE)
 			{		
@@ -75,9 +84,8 @@
 			
 			// Establish lookup object.
 			$this->lookup = new lookup();
-
-			session_start();
-
+            
+            
 			if(isset($_SESSION[SES_KEY::REDIRECT])) $this->redirect = $_SESSION[SES_KEY::REDIRECT];		
 		}	
 		
@@ -112,7 +120,7 @@
 			return $this->feedback;
 		}
 		
-		public function get_config()
+		public function get_member_config()
 		{
 			return $this->config;
 		}
@@ -158,7 +166,7 @@
 					$this->data_account->populate_from_request();
 					
 					// First try local.
-					if($this->get_config()->get_use_local() == TRUE)
+					if($this->get_member_config()->get_use_local() == TRUE)
 					{
 						$this->login_local();
 					}					
@@ -339,7 +347,8 @@
 			
 		//	Attempt to bind ldap adding all possible prefixes.
 		private function ldap_bind_check()
-		{			
+		{	
+            $bind           = FALSE;
 			$result			= FALSE;	// Final result.
 			$account		= NULL;		// Prepared account string to attempt bind.
 			$prefix_list 	= array();
@@ -384,65 +393,107 @@
 				foreach($prefix_list as $prefix)
 				{		
 					$account = $prefix.$this->data_account->get_account();
-
-					// Attempt to bind with account (prefix included) and password.
-					$result = @ldap_bind($ldap, $account, $this->data_account->get_credential());
-
-					// If successfull bind break out of loop.
-					if($result == TRUE) 
-					{
-						break;					
-					}
+                    
+                    /* 
+                    * Attempt to bind with account (prefix included) and 
+                    * password. 
+                    *
+                    * If we can bind, then user entered correct credentials.
+                    * We can mark the result TRUE and break out of loop.
+                    * If the credentials are wrong, ldap_bind() throws an
+                    * exception. We'll catch the exception and move on to next 
+                    * iteration.
+                    */
+                    try
+                    {
+                        
+                        $bind = ldap_bind($ldap, $account, $this->data_account->get_credential());
+                        
+                        if($bind == TRUE) 
+                        {
+                            break;					
+                        }
+                    }
+                    catch(\Exception $e)
+                    {                        
+                        continue;
+				    }
+					
 				}
 				
-				// If successfull bind break out of loop.
-				if($result == TRUE) 
-				{
-					//break;	
-					
-					
-					// Search goes here.
-					
-					// Prepare account filter.
-					$filter = "samaccountname=".$this->data_account->get_account();
-					
-					//echo 'filter: '.$filter;
-					
-					// Pull attributes for the AD domain
-					$attributes = array("displayname", "sn", "givenname", "pwdlastset", "cn");
+				/*
+                * We were able to bind, but now we need to run
+                * a search in the Active Directory for the login
+                * account's information (name, email, etc.).
+                */
+				if($bind == TRUE) 
+				{				
+                    /*
+                    * To do: Remove any domain substrings
+                    * from filter. This would allow a more
+                    * user firnedly experience instead of
+                    * letting ldap_search() throw bad filter
+                    * exceptions and treating the login as
+                    * failed. 
+                    */
+                    
+					/* concatenate search string. */
+					$filter = "samaccountname=".$this->data_account->get_account();					
 										
-					$sr = ldap_search($ldap, "dc=uky,dc=edu", $filter, $attributes);
-
-					$count = ldap_count_entries($ldap, $sr);
-						
-					// If no entries are found, return 0.
+					/* Pull attributes for the domain. */
+					$attributes = array("displayname", "sn", "givenname", "pwdlastset", "cn");
+				
+                    /* 
+                    * Attempt to locate account information with
+                    * account name from user as the filter. If
+                    * the user gave us bad info, ldap_search()
+                    * throws an exception we need to catch.
+                    */
+                    
+                    try
+                    {					
+                        $search_result = ldap_search($ldap, "dc=uky,dc=edu", $filter, $attributes);
+                    
+					    $count = ldap_count_entries($ldap, $search_result);
+                    }
+                    catch(\Exception $e)
+                    {
+                        continue;
+                    }
+                    
+					/* If no entries are found, return 0. */
 					if (!$count) 
 					{
-						return $rc;
+						$result = FALSE;
 					}
 					else 
 					{
-						//echo "found $count entrie(s)\n";
+						/* echo "found $count entrie(s)\n";	*/
 
-						$rc = 1;
-
-						// get the entries
-						$entries = ldap_get_entries($ldap, $sr);
-						//echo "DN is: " . $entries[0]["dn"] . "\n";
-						//echo "First Name " . $entries[0]["givenname"][0]. "\n";
-						//echo "surname " . $entries[0]["sn"][0]. "\n";
-						//echo "displayName: " . $entries[0]["displayname"][0]. "\n";
-						//echo "pwdlastset: " . $entries[0]["pwdlastset"][0]. "\n";
-
-						//print_r($entries);
+						/* Get the entries */
+						$entries = ldap_get_entries($ldap, $search_result);
 						
-						// Populate account object members with user info.
-						if(isset($entries[0]['cn'][0])) 			$this->data_account->set_account($entries[0]['cn'][0]);
-						if(isset($entries[0]['givenname'][0])) 		$this->data_account->set_name_f($entries[0]['givenname'][0]);
-						if(isset($entries[0]['initials'][0]))		$this->data_account->set_name_m($entries[0]['initials'][0]);
-						if(isset($entries[0]['sn'][0]))				$this->data_account->set_name_l($entries[0]['sn'][0]);					
-						if(isset($entries[0]['department'][0]))		$this->data_account->set_account_id($entries[0]['department'][0]);
-						if(isset($entries[0]['mail'][0]))			$this->data_account->set_email($entries[0]['mail'][0]);
+                        /*
+                        * Debugging only.
+                        *
+                        * echo "DN is: " . $entries[0]["dn"] . "\n";
+						* echo "First Name " . $entries[0]["givenname"][0]. "\n";
+						* echo "surname " . $entries[0]["sn"][0]. "\n";
+						* echo "displayName: " . $entries[0]["displayname"][0]. "\n";
+						* echo "pwdlastset: " . $entries[0]["pwdlastset"][0]. "\n";
+
+						* print_r($entries);
+						*/
+                        
+						/* Populate account object members with user attributes.. */
+						if(isset($entries[0]['cn'][0])){ 			  $this->data_account->set_account($entries[0]['cn'][0]); }
+						if(isset($entries[0]['givenname'][0])){       $this->data_account->set_name_f($entries[0]['givenname'][0]); }
+						if(isset($entries[0]['initials'][0])){		  $this->data_account->set_name_m($entries[0]['initials'][0]); }
+						if(isset($entries[0]['sn'][0])){			  $this->data_account->set_name_l($entries[0]['sn'][0]); }					
+						if(isset($entries[0]['department'][0])){      $this->data_account->set_account_id($entries[0]['department'][0]); }
+						if(isset($entries[0]['mail'][0])){			  $this->data_account->set_email($entries[0]['mail'][0]); }
+                        
+                        $result = TRUE;
 					}
 					
 					break;
@@ -452,12 +503,15 @@
 			// If we never managed to get a connection resource, trigger an error here. 
 			if(!$ldap) trigger_error("Could not get a connection resource: ".$this->config->get_ldap_host_bind(), E_USER_ERROR);
 			
-			// Close ldap connection.
-			// 2018-01-24, Commented out so lookup  
-			// can work. It requires a current bind.
-			//ldap_close($ldap);
-			
-			// Return results.
+			/* 
+            * Close ldap connection.
+			* 2018-01-24, Commented out so lookup  
+			* can work. It requires a current bind.
+			* 
+            * ldap_close($ldap);
+			*/
+            
+			/* Return results. */
 			return $result;
 		}
 		
