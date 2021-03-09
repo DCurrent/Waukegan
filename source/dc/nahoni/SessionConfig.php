@@ -26,16 +26,15 @@ interface iSessionConfig
 
 class SessionConfig implements iSessionConfig
 {
-	private
-		$database	= NULL,
-		$life		= NULL,
-		$sp_prefix	= NULL,
-		$sp_clean	= NULL,
-		$sp_destroy	= NULL,
-		$sp_get		= NULL,
-		$sp_set		= NULL;
+	private	$database	= NULL;
+	private	$life		= NULL;
+	private	$sp_prefix	= NULL;
+	private	$sp_clean	= NULL;
+	private	$sp_destroy	= NULL;
+	private	$sp_get		= NULL;
+	private	$sp_set		= NULL;
 	
-	public function __construct()
+	public function __construct($config_file = NULL)
 	{
 		$this->life 		= DEFAULTS::LIFE;
 		$this->sp_prefix	= DEFAULTS::SP_PREFIX;
@@ -43,6 +42,15 @@ class SessionConfig implements iSessionConfig
 		$this->sp_destroy	= DEFAULTS::SP_DESTROY;
 		$this->sp_get 		= DEFAULTS::SP_GET;
 		$this->sp_set 		= DEFAULTS::SP_SET;
+	
+		/*
+		* If config file is supplied, use it to
+		* populate member values.
+		*/
+		if($config_file)
+		{
+			$this->populate_config($config_file);
+		}
 	}
 	
 	// Accessors
@@ -116,6 +124,64 @@ class SessionConfig implements iSessionConfig
 	{
 		$this->sp_set = $value;
 	}
+	
+	/*
+	* Populates member data from supplied 
+	* config file. 
+	* 
+	* 1. Reads config file secion matched to 
+	* full class name (including namepsace).
+	*
+	* 2. Values in config are sent to matched
+	* mutator. Example: 
+	*
+	* Config: user_name = "John Doe"
+	* Method: $this->set_user_name($value);
+	*/
+	public function populate_config($config_file)
+	{
+		/*
+		* If any part of this code fails we need to
+		* consider it fatal and stop execution.
+		* Throw an exception for any kind of notice 
+		* or warning so we can catch and handle it. 
+		*/
+		set_error_handler(function ($severity, $message, $file, $line) {
+    	throw new \ErrorException($message, $severity, $severity, $file, $line);
+		});
+		
+		/*
+		* Parse config into array, get class specfic 
+		* section and pass values into members.
+		*/		
+		try
+		{			
+			$config_array = parse_ini_file($config_file, TRUE);
+			$section_array = $config_array[__CLASS__];	
+			
+			// Interate through each class method.
+			foreach(get_class_methods($this) as $method) 
+			{		
+				$key = str_replace('set_', '', $method);
+				
+				/*
+				* If there is an array element with key matching
+				* current method name, then the current method 
+				* is a set mutator for the element. Populate 
+				* the set method with the element's value.
+				*/
+				if(isset($section_array[$key]))
+				{					
+					$this->$method($section_array[$key]);					
+				}
+			}
+		}
+		catch(\Exception $exception)
+		{			
+			error_log(__CLASS__.' Fatal Error: '.$exception->getMessage());
+			die(__NAMESPACE__.' Fatal Error: Failed to read values from config file. Please contact administrator.');
+		}		
+	}	
 }
 
 ?>
