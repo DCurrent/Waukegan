@@ -7,9 +7,19 @@
 	require(__DIR__.'/dc/sorting/main.php'); 		// Record sorting.
 	require(__DIR__.'/dc/cache/main.php'); 		// Page cache.
 	require(__DIR__.'/data_main.php');
-	// Yukon require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/database/main.php'); 	// Database class.
-	// Stoeckl require_once($_SERVER['DOCUMENT_ROOT'].'/libraries/php/classes/access/main.php');
-	//require_once(__DIR__.'/dc/url_query/main.php'); 	// URL builder (to include variables).
+	
+    /**
+	* Site specific configuration settings. File
+	* is located in PHP installation directory.
+	* 
+	* To get location of our file, get path info
+	* array for PHP.ini and read file path element.
+	* Then add filename of our custom .ini file.
+	* This gives us the full path with filename
+	* of our config file.
+	**/
+	$config_file_info = pathinfo(php_ini_loaded_file());
+	$config_file_full = $config_file_info['dirname'].'\dc_flashpoint.ini';
 
 	// Ensure we're using https.
 	if(empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off")
