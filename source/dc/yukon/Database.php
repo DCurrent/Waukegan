@@ -8,19 +8,19 @@ require_once('config.php');
 interface iDatabase
 {	
 	// Accessors
-	function get_config();							// Return config object.
-	function get_connection();						// Return connection object.
+	function get_member_config();							// Return config object.
+	function get_member_connection();						// Return connection object.
 	function get_line_config();						// Return line parameters object.
 	function get_param_array();						// Return query parameter array.
 	function get_sql();								// Return current SQl statement.
 	function get_statement();						// Return query statement data member.
 	
 	// Mutators
-	function set_config(DatabaseConfig $value);		// Set the object to be used for query config settings.
+	function set_member_config(DatabaseConfig $value);		// Set the object to be used for query config settings.
 	function set_connection(Connect $value);		// Set connection data member.
 	function set_line_config(LineConfig $value);	// Set line parameters object.
 	function set_param_array(array $value);			// Set query sql parameter array data member.
-	function set_sql($value);						// Set query sql string data member.
+	function set_sql(string $value);				// Set query sql string data member.
 	function set_statement($value);					// Set query statement reference.
 	
 	// Request
@@ -137,19 +137,14 @@ class Database implements iDatabase
 	
 	
 	// *Accessors
-	public function get_config()
+	public function get_member_config()
 	{
 		return $this->config;
 	}
 	
-	public function get_connection()
+	public function get_member_connection()
 	{
 		return $this->connect;
-	}
-	
-	public function get_error()
-	{
-		return $this->error;	
 	}
 		
 	public function get_line_config()
@@ -179,7 +174,7 @@ class Database implements iDatabase
 		$this->params = $value;
 	}
 	
-	public function set_config(DatabaseConfig $value)
+	public function set_member_config(DatabaseConfig $value)
 	{
 		$this->config = $value;
 	}
@@ -188,18 +183,13 @@ class Database implements iDatabase
 	{
 		$this->connect = $value;
 	}
-	
-	public function set_error(Error $value)
-	{
-		$this->error = $value;
-	}
 			
 	public function set_line_config(LineConfig $value)
 	{
 		$this->line_config = $value;
 	}
 	
-	public function set_sql($value)
+	public function set_sql(string $value)
 	{
 		$this->sql = $value;
 	}
@@ -215,7 +205,7 @@ class Database implements iDatabase
 	public function free_statement()
 	{
 		$result;
-		$error_handler 	= $this->config->get_error();
+		$error = $this->config->get_error();
 		
 		try 
 		{
@@ -243,7 +233,7 @@ class Database implements iDatabase
 		}
 		catch (Exception $exception) 
 		{
-			// Catch exception internally if configured to do so.
+			// Send to main catch.
 			$error->exception_catch();
 		}
 	}
@@ -252,14 +242,14 @@ class Database implements iDatabase
 	public function query_execute()
 	{
 		$result;
-		$error_handler 	= $this->config->get_error();
+		$error 	= $this->config->get_error();
 		
 		try 
 		{
 			// Verify statement.
 			if(!$this->statement)
 			{				
-				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_EXECUTE_STATEMENT, EXCEPTION_CODE::QUERY_EXECUTE_STATEMENT));				
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_EXECUTE_STATEMENT, EXCEPTION_CODE::QUERY_EXECUTE_STATEMENT));	
 			}
 			
 			// Execute prepared query.
@@ -279,8 +269,8 @@ class Database implements iDatabase
 		}
 		catch (Exception $exception) 
 		{
-			// Catch exception internally if configured to do so.
-			$error->exception_catch();
+			// Send to application catch.
+			$error->exception_catch();			
 		}
 				
 		return $result;	
@@ -297,11 +287,13 @@ class Database implements iDatabase
 		$config_a	= array();	// Query config array.
 		
 		// Dereference data members.
-		$connect	= $this->connect->get_connection();
+		$connect	= $this->connect->get_member_connection();
 		$sql 		= $this->sql;
 		$params 	= $this->params;
 		$config		= $this->config;
-	
+		
+		$error = $this->config->get_error(); 		
+		
 		// Break down config object to array.
 		if($config)
 		{
@@ -310,8 +302,42 @@ class Database implements iDatabase
 			$config_a['QueryTimeout'] 			= $config->get_timeout();
 		}
 	
-		// Prepare query		
-		$statement = sqlsrv_prepare($connect, $sql, $params, $config_a);
+		try 
+		{
+			if(!$connect)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_PREPARE_CONNECTION, EXCEPTION_CODE::QUERY_PREPARE_CONNECTION));
+			}
+			
+			if(!$sql)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_PREPARE_SQL, EXCEPTION_CODE::QUERY_PREPARE_SQL));
+			}
+			
+			if(!$params)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_PREPARE_PARAM_LIST, EXCEPTION_CODE::QUERY_PREPARE_PARAM_LIST));
+			}
+			
+			if(!$config)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_PREPARE_CONFIG, EXCEPTION_CODE::QUERY_PREPARE_CONFIG));
+			}
+			
+			// Prepare query		
+			$statement = sqlsrv_prepare($connect, $sql, $params, $config_a);
+			
+			if($statement === false)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_PREPARE_STATEMENT, EXCEPTION_CODE::QUERY_PREPARE_STATEMENT));
+			}
+			
+		}
+		catch(Exception $exception)
+		{
+			// Send to application catch.
+			$error->exception_catch();
+		}
 		
 		// Set DB statement data member.
 		$this->statement = $statement;
@@ -331,11 +357,13 @@ class Database implements iDatabase
 		$config_a	= array();	// Query config array.
 				
 		// Dereference data members.
-		$connect 	= $this->connect->get_connection();
+		$connect 	= $this->connect->get_member_connection();
 		$sql 		= $this->sql;
 		$params 	= $this->params;
 		$config 	= $this->config;
 	
+		$error = $this->config->get_error();
+		
 		// Break down config object to array.
 		if($config)
 		{
@@ -344,8 +372,42 @@ class Database implements iDatabase
 			$config_a['QueryTimeout'] 		= $config->get_timeout();
 		}
 	
-		// Execute query.
-		$statement = sqlsrv_query($connect, $sql, $params, $config_a);
+		try 
+		{
+			if(!$connect)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_DIRECT_CONNECTION, EXCEPTION_CODE::QUERY_DIRECT_CONNECTION));
+			}
+			
+			if(!$sql)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_DIRECT_SQL, EXCEPTION_CODE::QUERY_DIRECT_SQL));
+			}
+			
+			if(!$params)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_DIRECT_PARAM_LIST, EXCEPTION_CODE::QUERY_DIRECT_PARAM_LIST));
+			}
+			
+			if(!$config)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_DIRECT_CONFIG, EXCEPTION_CODE::QUERY_DIRECT_CONFIG));
+			}
+			
+			// Execute query.
+			$statement = sqlsrv_query($connect, $sql, $params, $config_a);
+			
+			if($statement === false)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::QUERY_DIRECT_STATEMENT, EXCEPTION_CODE::QUERY_DIRECT_STATEMENT));
+			}
+			
+		}
+		catch(Exception $exception)
+		{
+			// Send to application catch.
+			$error->exception_catch();
+		}
 		
 		// Set data member.
 		$this->statement = $statement;
@@ -357,8 +419,8 @@ class Database implements iDatabase
 	// *Results.
 	public function get_field_count()
 	{
-		$error_handler 	= $this->config->get_error();
-		$result			= 0;
+		$error 	= $this->config->get_error();
+		$result	= 0;
 		
 		try 
 		{
@@ -372,7 +434,7 @@ class Database implements iDatabase
 			$result = sqlsrv_num_fields($this->statement);
 			
 			// Any errors?
-			if($error_handler->detect_error())
+			if($error->detect_error())
 			{
 				throw new Exception(EXCEPTION_MSG::FIELD_COUNT_ERROR, EXCEPTION_CODE::FIELD_COUNT_ERROR);
 			}
@@ -380,7 +442,7 @@ class Database implements iDatabase
 		}
 		catch (Exception $exception) 
 		{	
-			$error_handler->exception_catch($exception);
+			$error->exception_catch($exception);
 		}
 		
 		// Return field count.
@@ -391,6 +453,7 @@ class Database implements iDatabase
 	public function get_field_metadata()
 	{
 		$result = array();
+		$error = $this->config->get_error();
 		
 		try 
 		{
@@ -404,7 +467,7 @@ class Database implements iDatabase
 			$result = sqlsrv_field_metadata($this->statement);
 			
 			// Any errors?
-			if($error_handler->detect_error())
+			if($error->detect_error())
 			{
 				throw new Exception(EXCEPTION_MSG::METADATA_ERROR, EXCEPTION_CODE::METADATA_ERROR);
 			}
@@ -412,7 +475,7 @@ class Database implements iDatabase
 		}
 		catch (Exception $exception) 
 		{	
-			$error_handler->exception_catch($exception);
+			$error->exception_catch($exception);
 		}
 		
 		// Return metadata array.
@@ -433,10 +496,30 @@ class Database implements iDatabase
 		$fetchType	= $this->line_config->get_fetchtype();
 		$row		= $this->line_config->get_row();
 		$offset		= $this->line_config->get_offset();		
-								
-		// Get line array.
-		$line = sqlsrv_fetch_array($statement, $fetchType, $row, $offset);
-
+		
+		$error = $this->config->get_error();
+		
+		try 
+		{
+			if(!$statement)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::LINE_ARRAY_STATEMENT, EXCEPTION_CODE::LINE_ARRAY_STATEMENT));
+			}
+			
+			// Get line array.
+			$line = sqlsrv_fetch_array($statement, $fetchType, $row, $offset);
+			
+			if($line === false)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::LINE_ARRAY_FAIL, EXCEPTION_CODE::LINE_ARRAY_FAIL));
+			}
+			
+		}
+		catch(Exception $exception)
+		{
+			// Send to application catch.
+			$error->exception_catch();
+		}
 		
 		// Return line array.
 		return $line;
@@ -494,10 +577,30 @@ class Database implements iDatabase
 		$offset		= $this->line_config->get_offset();
 		$class		= $this->line_config->get_class_name();
 		$class_params	= $this->line_config->get_class_params();
-				
-		// Get line object.
-		$line = sqlsrv_fetch_object($statement, $class, $class_params, $row, $offset);
+		
+		$error = $this->config->get_error();
+		
+		try 
+		{
+			if(!$statement)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::LINE_OBJECT_STATEMENT, EXCEPTION_CODE::LINE_OBJECT_STATEMENT));
+			}
 			
+			// Get line object.
+			$line = sqlsrv_fetch_object($statement, $class, $class_params, $row, $offset);
+													
+			if($line === false)
+			{
+				$error->exception_throw(new Exception(EXCEPTION_MSG::LINE_OBJECT_FAIL, EXCEPTION_CODE::LINE_OBJECT_FAIL));
+			}
+		}
+		catch(Exception $exception)
+		{					
+			// Send to application catch.
+			$error->exception_catch();				
+		}
+		
 		// Return line object.
 		return $line;
 	}
@@ -551,9 +654,32 @@ class Database implements iDatabase
 	public function get_row_count()
 	{
 		$count = 0;
+				
+		$error = $this->config->get_error();
 		
-		// Get row count.
-		$count = sqlsrv_num_rows($this->statement);	
+		try 
+		{
+			// Missing statement?
+			if(!$this->statement)
+			{
+				throw new Exception(EXCEPTION_MSG::ROW_COUNT_STATEMENT, EXCEPTION_CODE::ROW_COUNT_STATEMENT);
+			}
+			
+			// Get row count.
+			$count = sqlsrv_num_rows($this->statement);	
+			
+			// Any errors?
+			if($error->detect_error())
+			{
+				throw new Exception(EXCEPTION_MSG::ROW_COUNT_FAIL, EXCEPTION_CODE::ROW_COUNT_FAIL);
+			}
+			
+		}
+		catch (Exception $exception) 
+		{	
+			// Send to application catch.
+			$error->exception_catch();
+		}
 		
 		// Return count.
 		return $count;
@@ -564,8 +690,31 @@ class Database implements iDatabase
 	{
 		$result = FALSE;
 		
-		// Get row count.
-		$result = sqlsrv_has_rows($this->statement);	
+		$error = $this->config->get_error();		
+			
+		try 
+		{
+			// Missing statement?
+			if(!$this->statement)
+			{
+				throw new Exception(EXCEPTION_MSG::ROW_VERIFY_STATEMENT, EXCEPTION_CODE::ROW_VERIFY_STATEMENT);
+			}
+			
+			// Get has rows.
+			$result = sqlsrv_has_rows($this->statement);
+			
+			// Any errors?
+			if($error->detect_error())
+			{
+				throw new Exception(EXCEPTION_MSG::ROW_VERIFY_FAIL, EXCEPTION_CODE::ROW_VERIFY_FAIL);
+			}
+			
+		}
+		catch (Exception $exception) 
+		{	
+			// Send to application catch.
+			$error->exception_catch();
+		}
 		
 		// Return result.
 		return $result;
