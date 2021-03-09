@@ -23,6 +23,8 @@
 	// Record navigation.
 	$obj_navigation_rec = new class_record_nav();	
 	
+    //echo '<!-- $obj_navigation_rec->get_id()'.$obj_navigation_rec->get_id().' -->';
+
 	// Prepare redirect url with variables.
 	$url_query	= new url_query;
 	$url_query->set_data('action', $obj_navigation_rec->get_action());
