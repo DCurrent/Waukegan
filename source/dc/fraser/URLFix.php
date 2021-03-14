@@ -1,5 +1,8 @@
 <?php
-	final class url_query
+
+	namespace dc\fraser;
+	
+	final class URLFix
 	{
 		private 
 			$data 		= NULL,
@@ -60,31 +63,29 @@
 		{
 			if (empty($this->data))
 			{
-				return "";
+				return '';
 			}
 			
-			$result = "?";  
-			
-			
+			$result = '?';  
 			      
 			foreach ($this->data as $key => $value) 
 			{
 				if (!is_array($value)) 
 				{
-					if ($value === "")
+					if ($value === '')
 					{
 						$result .= urlencode($key).'&';
 					}
 					else
 					{
-						$result .= urlencode($key)."=".urlencode($value).'&';
+						$result .= urlencode($key).'='.urlencode($value).'&';
 					}
 				}
 				else
 				{
 					foreach ($value as $value_element) 
 					{
-						$result .= urlencode($key)."[]=".urlencode($value_element).'&';
+						$result .= urlencode($key).'[]='.urlencode($value_element).'&';
 					}
 				}
 			}

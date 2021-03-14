@@ -26,7 +26,7 @@
     //echo '<!-- $obj_navigation_rec->get_id()'.$obj_navigation_rec->get_id().' -->';
 
 	// Prepare redirect url with variables.
-	$url_query	= new url_query;
+	$url_query	= \dc\fraser\URLFix();
 	$url_query->set_data('action', $obj_navigation_rec->get_action());
 	$url_query->set_data('id', $obj_navigation_rec->get_id());
 	
