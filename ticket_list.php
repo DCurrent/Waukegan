@@ -109,7 +109,7 @@
 	}
 	
 	// Prepare redirect url with variables.
-	$url_query	= new url_query;
+	$url_query	= new \dc\fraser\URLFix();
 		
 	// User access.
 	$access_obj = new \dc\stoeckl\status();
@@ -128,75 +128,114 @@
 	$navigation_obj->generate_markup_nav();
 	$navigation_obj->generate_markup_footer();	
 	
-	// Set up database.
-	$db_conn_set = new class_db_connect_params();
-	$db_conn_set->set_name(DATABASE::NAME);
-	
-	$db = new class_db_connection($db_conn_set);
-	$query = new class_db_query($db);
-		
-	$paging = new class_paging;
-	
-	// Establish sorting object, set defaults, and then get settings
-	// from user (if any).
-	$sorting = new class_sort_control;
+    /* New DB */
+    $paging_config = new \dc\record_navigation\PagingConfig();
+    $paging_config->set_url_query_instance($url_query);
+	$paging = new \dc\record_navigation\Paging($paging_config);
+
+    /* 
+    * Establish sorting and filtering objects, set 
+    * defaults, and then get settings from user (if any).
+	*/
+
+    $sorting = new \dc\sorting\Sorting();
 	$sorting->set_sort_field(SORTING_FIELDS::CREATED);
-	$sorting->set_sort_order(SORTING_ORDER_TYPE::DECENDING);
+	$sorting->set_sort_order(\dc\sorting\SORTING_ORDER_TYPE::DECENDING);
 	$sorting->populate_from_request();
-	
-	$filter = new class_filter();
+
+    $filter = new class_filter();
 	$filter->populate_from_request();
+
+    $sql_string = 'EXEC ticket_list :page_current,														 
+										:page_rows,
+										:account,
+										:create_from,
+										:create_to,
+										:update_from,
+										:update_to,
+										:status,
+										:sort_field,
+										:sort_order';
+
+    
+    try
+    {   
+        $dbh_pdo_statement = $dc_yukon_connection->get_member_connection()->prepare($sql_string);
 		
-	$query->set_sql('{call ticket_list(@page_current 		= ?,														 
-										@page_rows 			= ?,
-										@page_last 			= ?,
-										@row_count_total	= ?,
-										@account 			= ?,
-										@create_from 		= ?,
-										@create_to 			= ?,
-										@update_from 		= ?,
-										@update_to 			= ?,
-										@status				= ?,
-										@sort_field 		= ?,
-										@sort_order 		= ?)}');
-											
-	$page_last 	= NULL;
-	$row_count 	= NULL;
-	$sort_field 		= $sorting->get_sort_field();
-	$sort_order 		= $sorting->get_sort_order();	
-	
-	$params = array(array($paging->get_page_current(), 	SQLSRV_PARAM_IN), 
-					array($paging->get_row_max(), 		SQLSRV_PARAM_IN), 
-					array($page_last, 					SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
-					array($row_count, 					SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
-					array($access_obj->get_member_account(), 	SQLSRV_PARAM_IN),
-					array($filter->get_create_f(),		SQLSRV_PARAM_IN),
-					array($filter->get_create_t(),		SQLSRV_PARAM_IN),
-					array($filter->get_update_f(),		SQLSRV_PARAM_IN),
-					array($filter->get_update_t(),		SQLSRV_PARAM_IN),
-					array($filter->get_status(),		SQLSRV_PARAM_IN),
-					array($sort_field,					SQLSRV_PARAM_IN),
-					array($sort_order,					SQLSRV_PARAM_IN));
+        $page_last = NULL;
+        $row_count = NULL;
+               
+	    $dbh_pdo_statement->bindValue(':page_current', $paging->get_page_current(), \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':page_rows', $paging->get_row_max(), \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':account', $access_obj->get_member_account(), \PDO::PARAM_STR);
+        $dbh_pdo_statement->bindValue(':create_from', $filter->get_create_f(), \PDO::PARAM_STR);
+        $dbh_pdo_statement->bindValue(':create_to', $filter->get_create_t(), \PDO::PARAM_STR);
+        $dbh_pdo_statement->bindValue(':update_from', $filter->get_update_f(), \PDO::PARAM_STR);
+        $dbh_pdo_statement->bindValue(':update_to', $filter->get_update_t(), \PDO::PARAM_STR);
+        $dbh_pdo_statement->bindValue(':status', $filter->get_status(), \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':sort_field', $sorting->get_sort_field(), \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':sort_order', $sorting->get_sort_order(), \PDO::PARAM_INT);
+        
+        $dbh_pdo_statement->execute();
+        
+        $error_db = $dbh_pdo_statement->errorInfo();
+        var_dump($access_obj);
+        var_dump($filter);
+        var_dump($dbh_pdo_statement);
+        var_dump($error_db);
+    }
+    catch(\PDOException $e)
+    {
+        die('Database error : '.$e->getMessage());
+    }
 
-	$query->set_params($params);
-	$query->query();
-	
-	$query->get_line_params()->set_class_name('class_ticket_data');
-	$_obj_data_main_list = $query->get_line_object_list();
+    /*
+    * Build a list of data objects. Each object in the
+    * list represents a row of data from our query.
+    */
+    $_row_object = NULL;
+    $_obj_data_main_list = new \SplDoublyLinkedList();	// Linked list object.
 
-	// Send control data from procedure to paging object.
-	$paging->set_page_last($page_last);
-	$paging->set_row_count_total($row_count);
+    while($_row_object = $dbh_pdo_statement->fetchObject('class_ticket_data', array()))
+    {       
+        $_obj_data_main_list->push($_row_object);
+    }
 
-	// Datalist list generation.
-	$_obj_data_list_status = NULL;
-	
-	$query->set_sql('{call ticket_status_list}');
-		
-	$query->query();
-	$query->get_line_params()->set_class_name('class_status_list_data');
-	
-	$_obj_data_list_status_list = $query->get_line_object_list();	
+    /*
+    * Now we need the paging information for 
+    * our paging control.
+    */
+
+    try
+    { 
+        
+        
+        echo '<! -- '.$dbh_pdo_statement->nextRowset().' -->';
+        
+        $error_db = $dc_yukon_connection->get_member_connection()->errorInfo();
+        
+        //var_dump($error_db);
+
+        $_paging_data = $dbh_pdo_statement->fetchObject('dc\record_navigation\data_paging', array());
+        
+        $error_db = $dc_yukon_connection->get_member_connection()->errorInfo();
+        
+        //var_dump($error_db);
+
+        $paging->set_page_last($_paging_data->get_page_count());
+        $paging->set_row_count_total($_paging_data->get_record_count()); 
+        
+        $paging->set_page_last(36);
+        $paging->set_row_count_total(354);
+
+    }
+    catch(\PDOException $e)
+    {
+        die('Database error : '.$e->getMessage());
+    }
+
+    /* Datalist list generation. */
+    $_obj_data_list_status_list = $dc_yukon_connection->get_row_object_list('{call ticket_status_list}', 'class_status_list_data');
 
 ?>
 
@@ -400,7 +439,7 @@
 						});
 					</script>
                     
-                    <a href="<?php echo $target_url; ?>&#63;nav_command=<?php echo RECORD_NAV_COMMANDS::NEW_BLANK;?>&amp;id=<?php echo DB_DEFAULTS::NEW_ID; ?>" class="btn btn-success btn-block" title="Click here to start entering a new item."><span class="glyphicon glyphicon-plus"></span> <?php //echo LOCAL_BASE_TITLE; ?></a>
+                    <a href="<?php echo $target_url; ?>&#63;nav_command=<?php echo \dc\record_navigation\RECORD_NAV_COMMANDS::NEW_BLANK;?>&amp;id=<?php echo DB_DEFAULTS::NEW_ID; ?>" class="btn btn-success btn-block" title="Click here to start entering a new item."><span class="glyphicon glyphicon-plus"></span> <?php //echo LOCAL_BASE_TITLE; ?></a>
                 <?php
 				}
 				
