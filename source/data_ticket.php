@@ -108,25 +108,27 @@
 	// tbl_ticket_journal
 	class class_ticket_journal_data extends class_common_data
 	{
-		protected
-			$details	= NULL,
-			$label		= NULL;
+		protected $details	= array();
+        protected $label	= array();
 				
 		// Get and return an xml string for database use.
 		public function xml()
 		{
-			$result = '<root>';
-						
-			foreach($this->id as $key => $id)
-			{								
-				$result .= '<row id="'.$id.'">';
-				$result .= '<label>'.$this->label[$key].'</label>';
-				$result .= '<details>'.htmlspecialchars($this->details[$key]).'</details>';
-				$result .= '</row>';									
-			}
-			
-			$result .= '</root>';
-			
+            
+            $result = '<root>';
+
+            foreach($this->id as $key => $id)
+            {								
+                $result .= '<row id="'.$id.'">';
+                //$result .= '<label>'.$this->label[$key].'</label>';
+                $result .= '<details>'.htmlspecialchars($this->details[$key]).'</details>';
+                $result .= '</row>';									
+            }
+
+            $result .= '</root>';
+            
+            echo (PHP_EOL);
+            echo($result);
 			return $result;
 		}
 		
@@ -191,17 +193,16 @@
 			
 			$result .= '</root>';
 			
+            echo (PHP_EOL);
+            echo($result);
+            
 			return $result;
 		}
 		
 		public function add_party($account)
 		{
 			$this->id[] = DB_DEFAULTS::NEW_ID;
-			$this->account[] = $account;
-			
-			var_dump($this->id);
-			echo '<br>';
-			var_dump($this->account);
+			$this->account[] = $account;			
 		}
 		
 		// Accessors
