@@ -162,9 +162,6 @@
     {   
         $dbh_pdo_statement = $dc_yukon_connection->get_member_connection()->prepare($sql_string);
 		
-        $page_last = NULL;
-        $row_count = NULL;
-               
 	    $dbh_pdo_statement->bindValue(':page_current', $paging->get_page_current(), \PDO::PARAM_INT);
         $dbh_pdo_statement->bindValue(':page_rows', $paging->get_row_max(), \PDO::PARAM_INT);
         $dbh_pdo_statement->bindValue(':account', $access_obj->get_member_account(), \PDO::PARAM_STR);
@@ -178,11 +175,7 @@
         
         $dbh_pdo_statement->execute();
         
-        $error_db = $dbh_pdo_statement->errorInfo();
-        var_dump($access_obj);
-        var_dump($filter);
-        var_dump($dbh_pdo_statement);
-        var_dump($error_db);
+        $error_db = $dbh_pdo_statement->errorInfo();        
     }
     catch(\PDOException $e)
     {
@@ -210,24 +203,20 @@
     { 
         
         
-        echo '<! -- '.$dbh_pdo_statement->nextRowset().' -->';
+        $dbh_pdo_statement->nextRowset();
         
         $error_db = $dc_yukon_connection->get_member_connection()->errorInfo();
         
-        //var_dump($error_db);
+        
 
         $_paging_data = $dbh_pdo_statement->fetchObject('dc\record_navigation\data_paging', array());
         
         $error_db = $dc_yukon_connection->get_member_connection()->errorInfo();
         
-        //var_dump($error_db);
+        
 
         $paging->set_page_last($_paging_data->get_page_count());
-        $paging->set_row_count_total($_paging_data->get_record_count()); 
-        
-        $paging->set_page_last(36);
-        $paging->set_row_count_total(354);
-
+        $paging->set_row_count_total($_paging_data->get_record_count());
     }
     catch(\PDOException $e)
     {
