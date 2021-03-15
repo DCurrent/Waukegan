@@ -13,20 +13,13 @@
 	$obj_navigation_main->generate_markup_nav();
 	$obj_navigation_main->generate_markup_footer();	
 				
-	// Set up database.
-	$db_conn_set = new class_db_connect_params();
-	$db_conn_set->set_name(DATABASE::NAME);
-	
-	$db = new class_db_connection($db_conn_set);
-	$query = new class_db_query($db);		
-			
-	// Record navigation.
-	$obj_navigation_rec = new class_record_nav();	
+	/* Record navigation. */
+	$obj_navigation_rec = new dc\record_navigation\RecordMenu();	
 	
     //echo '<!-- $obj_navigation_rec->get_id()'.$obj_navigation_rec->get_id().' -->';
 
 	// Prepare redirect url with variables.
-	$url_query	= \dc\fraser\URLFix();
+	$url_query	= new \dc\fraser\URLFix();
 	$url_query->set_data('action', $obj_navigation_rec->get_action());
 	$url_query->set_data('id', $obj_navigation_rec->get_id());
 	
@@ -52,46 +45,54 @@
 	{		
 	
 		default:		
-		case RECORD_NAV_COMMANDS::NEW_BLANK:
+		case \dc\record_navigation\RECORD_NAV_COMMANDS::NEW_BLANK:
 		
 			$_main_data->set_account($access_obj->get_member_account());
 			$_main_data->set_status(1);
 			break;
 			
-		case RECORD_NAV_COMMANDS::NEW_COPY:			
+		case \dc\record_navigation\RECORD_NAV_COMMANDS::NEW_COPY:			
 			
 			// Populate the object from post values.			
 			$_main_data->populate_from_request();			
 			break;
 			
-		case RECORD_NAV_COMMANDS::LISTING:
+		case \dc\record_navigation\RECORD_NAV_COMMANDS::LISTING:
 			
 			// Direct to listing.				
 			header('Location: ticket_list.php');
 			break;
 			
-		case RECORD_NAV_COMMANDS::DELETE:						
-			
-			// Populate the object from post values.			
+		case \dc\record_navigation\RECORD_NAV_COMMANDS::DELETE:						
+			            
+            /* Populate the object from post values. */
 			$_main_data->populate_from_request();
 				
-			// Call and execute delete SP.
-			$query->set_sql('{call ticket_delete(@id = ?)}');			
+			/* Call and execute delete SP. */            
+            $sql_string = 'EXEC ticket_delete :id';
 			
-			$query->set_params(array(array($_main_data->get_id(), SQLSRV_PARAM_IN)));
-			$query->query();
+            $dbh_pdo_statement = $dc_yukon_connection->get_member_connection()->prepare($sql_string);
+
+            $dbh_pdo_statement->bindValue(':id', $_main_data->get_id(), \PDO::PARAM_INT);
+
+            $rowcount = $dbh_pdo_statement->execute();
+            
 			
-			// Refrsh page to the previous record.				
+			/* Refrsh page to the previous record. */
 			header('Location: '.$_SERVER['PHP_SELF']);			
 				
 			break;				
 					
-		case RECORD_NAV_COMMANDS::SAVE:
+		case \dc\record_navigation\RECORD_NAV_COMMANDS::SAVE:
 			
 			// Stop errors in case someone tries a direct command link.
-			if($obj_navigation_rec->get_command() != RECORD_NAV_COMMANDS::SAVE) break;
+			if($obj_navigation_rec->get_command() != \dc\record_navigation\RECORD_NAV_COMMANDS::SAVE) break;
 			
-			$file_name = NULL;
+            /* 
+            * Testing code for file uploads. Not part of 
+            * current functionality.
+			*/
+            $file_name = NULL;
 			
 			if(isset($_FILES))
 			{				
@@ -295,67 +296,91 @@
 			break;			
 	}
 	
-	// Last thing to do before moving on to main html is to get data to populate objects that
-	// will then be used to generate forms and subforms. This may have already been done, 
-	// such as when making copies of a record, but normally only a only blank object 
-	// will exist at this point. We run a basic select query from our current ID and 
-	// if a row is found overwrite whatever is in the main data object. If needed, we
-	// repeat the process for any sub queries and forms.
-	//
-	// If there is no row at all found, nothing will be done - this is intended behavior because
-	// there could be several reasons why no record is found here and we don't want to have 
-	// overly complex or repetitive logic, but that does mean we have to make sure there
-	// has been an object established at some point above.
-	
-	//////
-	$query->set_sql('{call ticket_detail(@id = ?,														 
-								@account 		= ?,
-								@sort_field 	= ?,
-								@sort_order 	= ?,
-								@nav_first		= ?,
-								@nav_previous	= ?,
-								@nav_next		= ?,
-								@nav_last		= ?)}');	
-	$nav_first 		= NULL;
-	$nav_previous	= NULL;
-	$nav_next		= NULL;
-	$nav_last 		= NULL;
-					
-	$params = array(array($obj_navigation_rec->get_id(), 	SQLSRV_PARAM_IN), 
-					array($access_obj->get_member_account(), 		SQLSRV_PARAM_IN),
-					array(NULL, 		SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
-					array(NULL, 		SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
-					array($nav_first,	SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
-					array($nav_previous, SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
-					array($nav_next, 	SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT),
-					array($nav_last, 	SQLSRV_PARAM_OUT, SQLSRV_PHPTYPE_INT));
-
-	$query->set_params($params);
-	$query->query();
-	
-	
-	
-	$query->get_line_params()->set_class_name('class_ticket_data');
-	
-	if($query->get_row_exists() === TRUE) $_main_data = $query->get_line_object();
-	
-	
-	// Sub table (journal) generation
-	$query->get_next_result();
-	
-	$query->get_line_params()->set_class_name('class_ticket_journal_data');
-	
-	$_obj_data_sub_arr = array();
-	if($query->get_row_exists()) $_obj_data_sub_arr = $query->get_line_object_list();
-	
-	// Sub table (party) generation.
-	$query->get_next_result();
-	
-	$query->get_line_params()->set_class_name('class_ticket_party_data');
-	
-	$_obj_data_sub_party_arr = array();
-	if($query->get_row_exists()) $_obj_data_sub_party_arr = $query->get_line_object_list();
+	/* 
+    * Last thing to do before moving on to main html is to get data to populate objects that
+	* will then be used to generate forms and subforms. This may have already been done, 
+	* such as when making copies of a record, but normally only a only blank object 
+	* will exist at this point. We run a basic select query from our current ID and 
+	* if a row is found overwrite whatever is in the main data object. If needed, we
+	* repeat the process for any sub queries and forms.
+	*
+	* If there is no row at all found, nothing will be done - this is intended behavior because
+	* there could be several reasons why no record is found here and we don't want to have 
+	* overly complex or repetitive logic, but that does mean we have to make sure there
+	* has been an object established at some point above.
+	*/
 		
+	$sql_string = 'EXEC ticket_detail :id,
+										:account,
+										:sort_field,
+										:sort_order,
+                                        :nav_first,
+                                        :nav_previous,
+                                        :nav_next,
+                                        :nav_last';
+
+    
+    try
+    {   
+        $dbh_pdo_statement = $dc_yukon_connection->get_member_connection()->prepare($sql_string);
+		
+	    $dbh_pdo_statement->bindValue(':id', $obj_navigation_rec->get_id(), \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':account', $access_obj->get_member_account(), \PDO::PARAM_STR);
+        $dbh_pdo_statement->bindValue(':sort_field', NULL, \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':sort_order', NULL, \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':nav_first', NULL, \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':nav_previous', NULL, \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':nav_next', NULL, \PDO::PARAM_INT);
+        $dbh_pdo_statement->bindValue(':nav_last', NULL, \PDO::PARAM_INT);
+        
+        $dbh_pdo_statement->execute();
+                
+        $_main_data = $dbh_pdo_statement->fetchObject('class_ticket_data', array());
+    }
+    catch(\PDOException $e)
+    {
+        die('Database error : '.$e->getMessage());
+    }
+			
+	/* Sub table (journal) generation. */
+
+    try
+    {
+        $dbh_pdo_statement->nextRowset();  
+        
+        $_row_object = NULL;
+        $_obj_data_sub_arr = new \SplDoublyLinkedList();	// Linked list object.
+
+        while($_row_object = $dbh_pdo_statement->fetchObject('class_ticket_journal_data', array()))
+        {       
+            $_obj_data_sub_arr->push($_row_object);
+        }      
+    }
+    catch(\PDOException $e)
+    {
+        die('Database error : '.$e->getMessage());
+    }
+
+    /* Sub table (Party) generation. */
+
+    try
+    {
+        $dbh_pdo_statement->nextRowset();  
+        
+        $_row_object = NULL;
+        $_obj_data_sub_party_arr = new \SplDoublyLinkedList();	// Linked list object.
+
+        while($_row_object = $dbh_pdo_statement->fetchObject('class_ticket_party_data', array()))
+        {       
+            $_obj_data_sub_party_arr->push($_row_object);
+        }      
+    }
+    catch(\PDOException $e)
+    {
+        die('Database error : '.$e->getMessage());
+    }
+
+			
 	// Now that we have parties, we'll need to add administrators and
 	// the current user as default parites.
 	
@@ -410,24 +435,9 @@
 		
 		
 	// Datalist list generation.
-	$_obj_data_list_status = NULL;
-	
-	$query->set_sql('{call ticket_status_list}');
-		
-	$query->query();
-	$query->get_line_params()->set_class_name('class_status_list_data');
-	
-	// Populate data object array with results, or a single object if no
-	// rows were found.
-	if($query->get_row_exists())
-	{		
-		$_obj_data_list_status_arr = $query->get_line_object_all();
-	}
-	else
-	{
-		$_obj_data_list_status_arr = array(new class_status_data());		
-	}	
-	
+    /* Datalist list generation. */
+    $_obj_data_list_status_arr = $dc_yukon_connection->get_row_object_list('{call ticket_status_list}', 'class_status_list_data');
+
 	// Create a header for the page and title.
 	$ticket_header = NULL;
 	if($_main_data->get_label())
@@ -464,10 +474,15 @@
 		}
 		
 		// Populate main navigation with ID's from main data stored procedure.
-		$obj_navigation_rec->set_id_first($nav_first);
-		$obj_navigation_rec->set_id_previous($nav_previous);
-		$obj_navigation_rec->set_id_next($nav_next);
-		$obj_navigation_rec->set_id_last($nav_last);
+		//$obj_navigation_rec->set_id_first($nav_first);
+		//$obj_navigation_rec->set_id_previous($nav_previous);
+		//$obj_navigation_rec->set_id_next($nav_next);
+		//$obj_navigation_rec->set_id_last($nav_last);
+
+        $obj_navigation_rec->set_id_first(1);
+		$obj_navigation_rec->set_id_previous(1);
+		$obj_navigation_rec->set_id_next(1);
+		$obj_navigation_rec->set_id_last(1);
 	
 		$obj_navigation_rec->generate_button_list();
 ?>
@@ -567,23 +582,37 @@
                 <div class="form-group">
                 	<label class="control-label col-sm-2" for="facility">Status:</label>
                 	<div class="col-sm-10">
-                    	<?php
-                    	foreach($_obj_data_list_status_arr as $_obj_data_list_status)
-                        {							
-						?>                           
-                       		<div class="radio">
-                            
-                            	<label><input 
-                                			type="radio" 
-                                            name="status" 
-                                            value="<?php echo $_obj_data_list_status->get_id(); ?>"                                            
-                                            <?php //if($access_obj->get_member_account() != APPLICATION_SETTINGS::ADMIN_MAIN) echo ' disabled '; ?> 
-											<?php if($_main_data->get_status() == $_obj_data_list_status->get_id()) echo ' checked ';?>><?php echo $_obj_data_list_status->get_label(); ?></label>
-                       	 	</div>
-                       
+                    	
+                        <!-- Status: <?php echo $_main_data->get_status(); ?> -->
+
                         <?php
-                        }
-                    	?>                        
+                            if(is_object($_obj_data_list_status_arr) === TRUE)
+                            {
+                                for($_obj_data_list_status_arr->rewind(); $_obj_data_list_status_arr->valid(); $_obj_data_list_status_arr->next())
+                                {						
+                                    $_obj_data_list_status = $_obj_data_list_status_arr->current();
+
+                                    /*
+                                    * Populate selected if the ID of current element
+                                    * in loop matches the underlying data value or if
+                                    * there's no underlying data value at all and current
+                                    * element ID matches a predetermined default.                                            
+                                    */
+                                    $selected = NULL;
+
+                                    if($_obj_data_list_status->get_id() == $_main_data->get_status() || !$_main_data->get_status() && $_obj_data_list_status->get_id() == 1)
+                                    {
+                                        $selected = ' checked ';
+                                    }
+                                    ?>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="status" id="status_<?php echo $_obj_data_list_status->get_id(); ?>" value="<?php echo $_obj_data_list_status->get_id(); ?>" <?php echo $selected; ?> required>
+                                            <label class="form-check-label" for="status_<?php echo $_obj_data_list_status->get_id(); ?>"><?php echo $_obj_data_list_status->get_label(); ?></label>
+                                        </div>                                          
+                                    <?php										
+                                }
+                            }
+                        ?>             
                 	</div>
 				</div>
                 
