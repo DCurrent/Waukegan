@@ -19,7 +19,7 @@
 	* of our config file.
 	**/
 	$config_file_info = pathinfo(php_ini_loaded_file());
-	$config_file_full = $config_file_info['dirname'].'\dc_flashpoint.ini';
+	$config_file_full = $config_file_info['dirname'].'\dc_waukegan.ini';
 
 	/* Load class using namespace. */
 	function app_load_class($class_name_arg) 
