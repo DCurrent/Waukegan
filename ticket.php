@@ -548,14 +548,18 @@
                 <div class="form-group">
                 	<label class="control-label col-sm-2">Created:</label>
                 	<div class="col-sm-10">
-                		<p class="form-control-static"><?php if(is_object($_main_data->get_log_create())) echo date(APPLICATION_SETTINGS::TIME_FORMAT, $_main_data->get_log_create()->getTimestamp()); ?></p>
+                        <?php $obj_date_time = new DateTime($_main_data->get_log_create()); ?>                      
+                        
+                		<p class="form-control-static"><?php echo date('Y-m-d H:i:s', $obj_date_time->getTimestamp()); ?></p>
                 	</div>
                 </div>
                 
              	<div class="form-group">       
                     <label class="control-label col-sm-2">Last Update:</label>
                 	<div class="col-sm-10">
-                		<p class="form-control-static"><?php if(is_object($_main_data->get_log_update())) echo date(APPLICATION_SETTINGS::TIME_FORMAT, $_main_data->get_log_update()->getTimestamp()); ?></p>
+                		<?php $obj_date_time = new DateTime($_main_data->get_log_update()); ?>                      
+                        
+                		<p class="form-control-static"><?php echo date('Y-m-d H:i:s', $obj_date_time->getTimestamp()); ?></p>
                 	</div>
                 </div>
                 
