@@ -91,7 +91,7 @@
             /* 
             * Testing code for file uploads. Not part of 
             * current functionality.
-			*/
+			
             $file_name = NULL;
 			
 			if(isset($_FILES))
@@ -159,107 +159,201 @@
 					//$im = imagecreatetruecolor(50, 50);
 				}
 			}
-						
-			// Save the record. Saving main record is straight forward. We’ll run the populate method on our 
-			// main data object which will gather up post values. Then we can run a query to merge the values into 
-			// database table. We’ll then get the id from saved record (since we are using a surrogate key, the ID
-			// should remain static unless this is a brand new record). 
+            */
+            
+            /* Stop errors in case someone tries a direct command link. */
+			$file_name = NULL;
 			
-			// If necessary we will then save any sub records (see each for details).
+			/* 
+            * Populate the object from post values
+            * and remove 'T' insert date picker adds 
+            * between date and time. 
+            */  
+            $_main_data->populate_from_request();
 			
-			// Finally, we redirect to the current page using the freshly acquired id. That will ensure we have 
-			// always an up to date ID for our forms and navigation system.			
-		
-			// Populate the object from post values.			
-			$_main_data->populate_from_request();
+            
+            /* 
+            * Save the record. Saving main record is straight forward. We’ll run the populate method on our 
+            * main data object which will gather up post values. Then we can run a query to merge the values into 
+            * database table. We’ll then get the id from saved record (since we are using a surrogate key, the ID
+            * should remain static unless this is a brand new record). 
+            *
+            * If necessary we will then save any sub records (see each for details).
+            *
+            * Finally, we redirect to the current page using the freshly acquired id. That will ensure we have 
+            * always an up to date ID for our forms and navigation system.			
+            */                
+
+            $_main_data_label = $_main_data->get_label(); 
+
+            /* 
+            * Start transaction, prepare SQL string 
+            * and bind parameters. 
+            */    
+
+            $dc_yukon_connection->get_member_connection()->beginTransaction();
+
+            try                   
+            {   
+
+               $sql_string = 'EXEC ticket_update :id,														 
+													:label,
+													:details,
+													:status,
+													:eta,
+													:account,
+													:attachment,														 
+													:log_update, 
+													:log_update_by, 
+													:log_update_ip';
+
+                $dbh_pdo_statement = $dc_yukon_connection->get_member_connection()->prepare($sql_string);
+                
+                $error = $dbh_pdo_statement->errorInfo();
+                
+                var_dump($error);
+                
+                $dbh_pdo_statement->bindValue(':id', $_main_data->get_id(), \PDO::PARAM_INT);                    
+                $dbh_pdo_statement->bindValue(':label', $_main_data->get_label(), \PDO::PARAM_STR);
+                $dbh_pdo_statement->bindValue(':details', $_main_data->get_details(), \PDO::PARAM_STR);
+                $dbh_pdo_statement->bindValue(':status', $_main_data->get_status(), \PDO::PARAM_INT);
+                $dbh_pdo_statement->bindValue(':eta', $_main_data->get_eta(), \PDO::PARAM_STR);
+                $dbh_pdo_statement->bindValue(':account', $access_obj->get_member_account(), \PDO::PARAM_STR);
+                $dbh_pdo_statement->bindValue(':attachment', NULL, \PDO::PARAM_STR);
+                $dbh_pdo_statement->bindValue(':log_update', date('Y-m-d H:i:s'), \PDO::PARAM_STR);
+                $dbh_pdo_statement->bindValue(':log_update_by', $access_obj->get_member_account(), \PDO::PARAM_STR);
+                $dbh_pdo_statement->bindValue(':log_update_ip', $access_obj->get_ip(), \PDO::PARAM_STR);
+                
+                echo '<!-- Post main ID '.$_main_data->get_id().' -->';
+
+            }
+            catch(\PDOException $e)
+            {
+                $dc_yukon_connection->get_member_connection()->rollBack();
+                die('Sql set up error: '.$e->getMessage());
+            }
+
+            /*
+            * Execute the prepared query, and roll it back 
+            * if something blows up.
+            */
+            try
+            {                
+                $rowcount = $dbh_pdo_statement->execute();  
+                
+                /* Repopulate main data object with results from merge query. */
+                $_main_data = $dbh_pdo_statement->fetchObject('class_ticket_data', array());
+                
+                $error = $dbh_pdo_statement->errorInfo();
+                
+            }
+            catch(\PDOException $e)
+            {
+                $dc_yukon_connection->get_member_connection()->rollBack();
+                die('Sql set up error: '.$e->getMessage());
+            }
+
+            /* 
+            * Populate our main data object with ID the database 
+            * assigned to new record, then commit the transaction.
+            */
+            //$_main_data->set_id($dc_yukon_connection->get_member_connection()->lastInsertId());
+            $dc_yukon_connection->get_member_connection()->commit();
+            		
 			
-			$_main_data_label = $_main_data->get_label(); 
-		
-			// Call update stored procedure.
-			$query->set_sql('{call ticket_update(@id = ?,														 
-													@label = ?,
-													@details = ?,
-													@status = ?,
-													@eta = ?,
-													@account = ?,
-													@attachment = ?,														 
-													@log_update = ?, 
-													@log_update_by = ?, 
-													@log_update_ip = ?)}');
-													
-			$params = array(array($_main_data->get_id(), SQLSRV_PARAM_IN),
-						array($_main_data->get_label(), SQLSRV_PARAM_IN),						
-						array($_main_data->get_details(), SQLSRV_PARAM_IN),
-						array($_main_data->get_status(), SQLSRV_PARAM_IN),
-						array($_main_data->get_eta(), SQLSRV_PARAM_IN),
-						array($_main_data->get_member_account(), SQLSRV_PARAM_IN),
-						array(&$file_name, SQLSRV_PARAM_IN),
-						array(date(APPLICATION_SETTINGS::TIME_FORMAT), SQLSRV_PARAM_IN),
-						array($access_obj->get_member_account(), SQLSRV_PARAM_IN),
-						array($access_obj->get_member_ip(), SQLSRV_PARAM_IN));
-			
-			$query->set_params($params);			
-			$query->query();
-			
-			// Repopulate main data object with results from merge query.
-			$query->get_line_params()->set_class_name('class_ticket_data');
-			$_main_data = $query->get_line_object();
-			
-						
-			// Sub table: Journal.
-			$_obj_data_sub_request = new class_ticket_journal_data;
+            $error = $dbh_pdo_statement->errorInfo();                
+                
+           						
+			/* Sub table: Journal. */
+            
+			$_obj_data_sub_request = new class_ticket_journal_data();
 			$_obj_data_sub_request->populate_from_request();			
 				
-			// If the sub value id is an array, then we know there are 
-			// values to update.
-			if(is_array($_obj_data_sub_request->get_id()) === TRUE)
+			/* 
+            * If the sub value id is an array, then we know there are 
+			* values to update.
+			*/
+            
+            if(is_array($_obj_data_sub_request->get_id()) === TRUE)
 			{						
-				// Call update stored procedure.
-				$query->set_sql('{call ticket_journal_update(@fk_id = ?,														 
-														@xml = ?,
-														@log_update = ?,
-														@log_update_by = ?,
-														@log_update_ip = ?)}');
-														
-				$params = array(array($_main_data->get_id(), 			SQLSRV_PARAM_IN),
-								array($_obj_data_sub_request->xml(), 	SQLSRV_PARAM_IN),
-								array(date(APPLICATION_SETTINGS::TIME_FORMAT), 					SQLSRV_PARAM_IN),
-								array($access_obj->get_member_account(),		SQLSRV_PARAM_IN),
-								array($access_obj->get_member_ip(), 			SQLSRV_PARAM_IN));
-				
-				$query->set_params($params);			
-							
-				// Execute the merging query.
-				$query->query();
+				try
+                {
+                    $sql_string = 'EXEC ticket_journal_update :fk_id,														 
+                                                            :xml,
+                                                            :log_update,
+                                                            :log_update_by,
+                                                            :log_update_ip';
+                        
+                    $dbh_pdo_statement = $dc_yukon_connection->get_member_connection()->prepare($sql_string);
+
+                    $dbh_pdo_statement->bindValue(':fk_id', $_main_data->get_id(), \PDO::PARAM_INT);                    
+                    $dbh_pdo_statement->bindValue(':xml', $_obj_data_sub_request->xml(), \PDO::PARAM_STR);
+                    $dbh_pdo_statement->bindValue(':log_update', date('Y-m-d H:i:s'), \PDO::PARAM_STR);
+                    $dbh_pdo_statement->bindValue(':log_update_by', $access_obj->get_member_account(), \PDO::PARAM_STR);
+                    $dbh_pdo_statement->bindValue(':log_update_ip', $access_obj->get_ip(), \PDO::PARAM_STR);
+                    
+                    $dbh_pdo_statement->execute();
+                    
+                    $error_info = $dbh_pdo_statement->errorInfo();                     
+				}
+                catch(\PDOException $e)
+                {
+                    $dc_yukon_connection->get_member_connection()->rollBack();
+                    die('Sql set up error: '.$e->getMessage());
+                }
+                
+                if($dc_yukon_connection->get_member_connection()->inTransaction())
+                {
+                    $dc_yukon_connection->get_member_connection()->commit();
+                }
 			}
 			
+            
+            
 			// Sub table: Parties
+			/* Sub table: Parties. */
+            
 			$_obj_data_sub_request = new class_ticket_party_data();
 			$_obj_data_sub_request->populate_from_request();			
-			
-			// If the sub value id is an array, then we know there are 
-			// values to update.
-			if(is_array($_obj_data_sub_request->get_id()) === TRUE)
-			{						
-				// Call update stored procedure.
-				$query->set_sql('{call ticket_party_update(@fk_id = ?,														 
-														@xml = ?,
-														@log_update = ?,
-														@log_update_by = ?,
-														@log_update_ip = ?)}');
-														
-				$params = array(array($_main_data->get_id(), 			SQLSRV_PARAM_IN),
-								array($_obj_data_sub_request->xml(), 	SQLSRV_PARAM_IN),
-								array(date(APPLICATION_SETTINGS::TIME_FORMAT), 					SQLSRV_PARAM_IN),
-								array($access_obj->get_member_account(),		SQLSRV_PARAM_IN),
-								array($access_obj->get_member_ip(), 			SQLSRV_PARAM_IN));
 				
-				$query->set_params($params);			
-				$query->query();
+			/* 
+            * If the sub value id is an array, then we know there are 
+			* values to update.
+			*/
+            
+            if(is_array($_obj_data_sub_request->get_id()) === TRUE)
+			{						
+				try
+                {
+                    $sql_string = 'EXEC ticket_party_update :fk_id,														 
+                                                            :xml,
+                                                            :log_update,
+                                                            :log_update_by,
+                                                            :log_update_ip';
+
+                    $dbh_pdo_statement = $dc_yukon_connection->get_member_connection()->prepare($sql_string);
+
+                    $dbh_pdo_statement->bindValue(':fk_id', $_main_data->get_id(), \PDO::PARAM_INT);                    
+                    $dbh_pdo_statement->bindValue(':xml', $_obj_data_sub_request->xml(), \PDO::PARAM_STR);
+                    $dbh_pdo_statement->bindValue(':log_update', date('Y-m-d H:i:s'), \PDO::PARAM_STR);
+                    $dbh_pdo_statement->bindValue(':log_update_by', $access_obj->get_member_account(), \PDO::PARAM_STR);
+                    $dbh_pdo_statement->bindValue(':log_update_ip', $access_obj->get_ip(), \PDO::PARAM_STR);
+                    
+                    $dbh_pdo_statement->execute();				
+				}
+                catch(\PDOException $e)
+                {
+                    $dc_yukon_connection->get_member_connection()->rollBack();
+                    die('Sql set up error: '.$e->getMessage());
+                }
+                
+                if($dc_yukon_connection->get_member_connection()->inTransaction())
+                {
+                    $dc_yukon_connection->get_member_connection()->commit();
+                }
 			}
-			
-						
-			// Set up and send email alert.
+            
+            /* Set up and send email alert. */
 			$address  = NULL;
 			
 			$sub_data_party_account_arr = $_obj_data_sub_request->get_member_account();
@@ -278,7 +372,7 @@
 			}
 								
 			$subject = MAILING::SUBJECT;
-			$body = 'A ticket has been created or updated. <a href="http://ehs.uky.edu/apps/waukegan/ticket.php?id='.$_main_data->get_id().'">Click here</a> to view details.';
+			$body = 'A ticket has been created or updated. <a href="https://ehs.uky.edu/apps/waukegan/ticket.php?id='.$_main_data->get_id().'">Click here</a> to view details.';
 					
 			$headers   = array();
 			$headers[] = "MIME-Version: 1.0";
@@ -288,7 +382,7 @@
 			if(MAILING::CC) 	$headers[] = "Cc: ".MAILING::CC;	
 			
 			// Run mail function.
-			mail($address, MAILING::SUBJECT.' - '.$_main_data_label, $body, implode("\r\n", $headers));
+			//mail($address, MAILING::SUBJECT.' - '.$_main_data_label, $body, implode("\r\n", $headers));
 			
 			// Refrsh page to reload the record.				
 			header('Location: '.$_SERVER['PHP_SELF'].'?id='.$_main_data->get_id());
@@ -313,11 +407,7 @@
 	$sql_string = 'EXEC ticket_detail :id,
 										:account,
 										:sort_field,
-										:sort_order,
-                                        :nav_first,
-                                        :nav_previous,
-                                        :nav_next,
-                                        :nav_last';
+										:sort_order';
 
     
     try
@@ -328,14 +418,15 @@
         $dbh_pdo_statement->bindValue(':account', $access_obj->get_member_account(), \PDO::PARAM_STR);
         $dbh_pdo_statement->bindValue(':sort_field', NULL, \PDO::PARAM_INT);
         $dbh_pdo_statement->bindValue(':sort_order', NULL, \PDO::PARAM_INT);
-        $dbh_pdo_statement->bindValue(':nav_first', NULL, \PDO::PARAM_INT);
-        $dbh_pdo_statement->bindValue(':nav_previous', NULL, \PDO::PARAM_INT);
-        $dbh_pdo_statement->bindValue(':nav_next', NULL, \PDO::PARAM_INT);
-        $dbh_pdo_statement->bindValue(':nav_last', NULL, \PDO::PARAM_INT);
         
         $dbh_pdo_statement->execute();
                 
         $_main_data = $dbh_pdo_statement->fetchObject('class_ticket_data', array());
+        
+        if(!$_main_data)
+        {
+            $_main_data = new class_ticket_data();
+        }
     }
     catch(\PDOException $e)
     {
@@ -433,7 +524,38 @@
 		}
 	}
 		
-		
+    /* 
+    * Navigation control code. 
+    *
+    * Navigation data is contained in final 
+    * recordset from query.
+    */
+
+    try
+    {
+        $dbh_pdo_statement->nextRowset();  
+        
+        $obj_navigation_temp = $dbh_pdo_statement->fetchObject('dc\record_navigation\data_record_navigation', array());     
+        
+        /* 
+        * Transfer the output from recordset into
+        * Record nav object.
+        */
+        
+        $obj_navigation_rec->set_id_first($obj_navigation_temp->get_nav_first());
+        $obj_navigation_rec->set_id_previous($obj_navigation_temp->get_nav_previous());
+        $obj_navigation_rec->set_id_next($obj_navigation_temp->get_nav_next());
+        $obj_navigation_rec->set_id_last($obj_navigation_temp->get_nav_last());
+	
+        $obj_navigation_rec->generate_button_list();             
+    }
+    catch(\PDOException $e)
+    {
+        die('Database error : '.$e->getMessage());
+    }
+
+    
+
 	// Datalist list generation.
     /* Datalist list generation. */
     $_obj_data_list_status_arr = $dc_yukon_connection->get_row_object_list('{call ticket_status_list}', 'class_status_list_data');
@@ -473,18 +595,7 @@
 				break;
 		}
 		
-		// Populate main navigation with ID's from main data stored procedure.
-		//$obj_navigation_rec->set_id_first($nav_first);
-		//$obj_navigation_rec->set_id_previous($nav_previous);
-		//$obj_navigation_rec->set_id_next($nav_next);
-		//$obj_navigation_rec->set_id_last($nav_last);
-
-        $obj_navigation_rec->set_id_first(1);
-		$obj_navigation_rec->set_id_previous(1);
-		$obj_navigation_rec->set_id_next(1);
-		$obj_navigation_rec->set_id_last(1);
-	
-		$obj_navigation_rec->generate_button_list();
+		
 ?>
 
 <!DOCtype html>
@@ -806,7 +917,9 @@
                                                     <?php echo $_obj_data_sub->get_log_update_by(); //$lookup->get_member_account_data()->name_proper(); ?>
 												</td>
                                                 
-												<td><a id="<?php echo $_obj_data_sub->get_id(); ?>" href="#<?php echo $_obj_data_sub->get_id(); ?>"><?php if($_obj_data_sub->get_log_update()) echo date(APPLICATION_SETTINGS::TIME_FORMAT, $_obj_data_sub->get_log_update()->getTimestamp()); ?></a>			
+                                                <?php $obj_date_time = new DateTime($_obj_data_sub->get_log_update()); ?>                      
+                                        		                        
+												<td><a id="<?php echo $_obj_data_sub->get_id(); ?>" href="#<?php echo $_obj_data_sub->get_id(); ?>"><?php echo date(APPLICATION_SETTINGS::TIME_FORMAT, $obj_date_time->getTimestamp()); ?></a>			
 												</td>
 																							  
 												<td>													
