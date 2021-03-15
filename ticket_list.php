@@ -173,9 +173,7 @@
         $dbh_pdo_statement->bindValue(':sort_field', $sorting->get_sort_field(), \PDO::PARAM_INT);
         $dbh_pdo_statement->bindValue(':sort_order', $sorting->get_sort_order(), \PDO::PARAM_INT);
         
-        $dbh_pdo_statement->execute();
-        
-        $error_db = $dbh_pdo_statement->errorInfo();        
+        $dbh_pdo_statement->execute();   
     }
     catch(\PDOException $e)
     {
@@ -200,21 +198,11 @@
     */
 
     try
-    { 
+    {         
+        $dbh_pdo_statement->nextRowset();        
         
-        
-        $dbh_pdo_statement->nextRowset();
-        
-        $error_db = $dc_yukon_connection->get_member_connection()->errorInfo();
-        
-        
-
         $_paging_data = $dbh_pdo_statement->fetchObject('dc\record_navigation\data_paging', array());
         
-        $error_db = $dc_yukon_connection->get_member_connection()->errorInfo();
-        
-        
-
         $paging->set_page_last($_paging_data->get_page_count());
         $paging->set_row_count_total($_paging_data->get_record_count());
     }
