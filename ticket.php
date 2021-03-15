@@ -382,7 +382,7 @@
 			if(MAILING::CC) 	$headers[] = "Cc: ".MAILING::CC;	
 			
 			// Run mail function.
-			//mail($address, MAILING::SUBJECT.' - '.$_main_data_label, $body, implode("\r\n", $headers));
+			mail($address, MAILING::SUBJECT.' - '.$_main_data_label, $body, implode("\r\n", $headers));
 			
 			// Refrsh page to reload the record.				
 			header('Location: '.$_SERVER['PHP_SELF'].'?id='.$_main_data->get_id());
